@@ -3,27 +3,31 @@ import numpy as np
 import os
 import tempfile
 from tensorflow.keras.models import load_model
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 import psutil
 
-# --- CONFIGURATION ---
+# --- GLOBAL STORAGE (In-Memory DB) ---
+sessions = {}
+
+# --- MODEL LOADING ---
 MODEL_PATH = "face_model.h5"
 try:
     if os.path.exists(MODEL_PATH):
         model = load_model(MODEL_PATH)
-        print(f"✓ Model loaded from {MODEL_PATH}")
+        print("✓ Model loaded successfully")
     else:
         model = None
         print("⚠ Model not found. Using SIMULATION mode.")
 except Exception as e:
     model = None
-    print(f"⚠ Error loading model: {e}")
+    print(f"⚠ Model Error: {e}")
 
 EMOTIONS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 
-# --- CORE FUNCTIONS ---
-
+# --- HELPER: ANALYZE IMAGE ---
 def analyze_cv2_image(img):
     if img is None: return []
     
@@ -44,9 +48,9 @@ def analyze_cv2_image(img):
             emotion = EMOTIONS[emotion_idx]
             confidence = float(predictions[emotion_idx])
         else:
-            # Simulation
+            # Simulation Logic
             emotion = np.random.choice(EMOTIONS, p=[0.05, 0.05, 0.05, 0.35, 0.15, 0.1, 0.25])
-            confidence = 0.85 + (np.random.random() * 0.1)
+            confidence = 0.85
             
         results.append({
             "emotion": emotion,
@@ -54,6 +58,8 @@ def analyze_cv2_image(img):
             "bbox": [int(x), int(y), int(w), int(h)]
         })
     return results
+
+# --- CORE FUNCTIONS ---
 
 def detect_emotion_from_frame(image_bytes):
     nparr = np.frombuffer(image_bytes, np.uint8)
@@ -74,7 +80,6 @@ def process_video_file(video_bytes):
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret: break
-        
         if frame_count % frame_interval == 0:
             frame_results = analyze_cv2_image(frame)
             all_results.extend(frame_results)
@@ -84,54 +89,67 @@ def process_video_file(video_bytes):
     os.unlink(tmp_path)
     return all_results
 
-# --- ADVANCED ANALYTICS ---
+# --- ADVANCED STATISTICS (Fixes your Error) ---
 
 def calculate_advanced_stats(data_points):
+    """
+    Calculates 10+ Features: Confusion, Boredom, Vibe, Attendance, etc.
+    """
     if not data_points:
         return {
             "total_faces": 0,
             "counts": {e: 0 for e in EMOTIONS},
-            "distribution": {},
-            "timeline": [],
+            "confusion_index": 0,
+            "boredom_meter": 0,
+            "vibe_score": 0,
             "engagement_score": 0,
             "at_risk_index": 0,
-            "recommendation": "Waiting for data..."
+            "attendance_est": 0
         }
     
     emotions = [d['emotion'] for d in data_points]
     counts = Counter(emotions)
     total = len(emotions)
     
-    # Ensure all keys exist
+    # ensure all keys exist
     safe_counts = {e: counts.get(e, 0) for e in EMOTIONS}
+
+    # 1. Confusion Index (Surprise + Fear)
+    confusion = ((safe_counts['Surprise'] + safe_counts['Fear']) / total) * 100
     
-    # Engagement Calculation
-    score = 0
+    # 2. Boredom Meter (Neutral dominance)
+    boredom = (safe_counts['Neutral'] / total) * 100
+    
+    # 3. Vibe Score (1-10)
+    positive = safe_counts['Happy'] + safe_counts['Surprise']
+    negative = safe_counts['Sad'] + safe_counts['Angry'] + safe_counts['Disgust'] + safe_counts['Fear']
+    vibe = 5 + ((positive - negative) / total) * 5
+    vibe = max(1, min(10, vibe))
+
+    # 4. Engagement Score (Weighted)
+    eng_score = 0
     for e in emotions:
-        if e == 'Happy': score += 1.0
-        elif e == 'Surprise': score += 0.8
-        elif e == 'Neutral': score += 0.5
-        else: score -= 0.2
-    engagement_score = max(0, min(100, (score / total) * 100)) if total > 0 else 0
+        if e == 'Happy': eng_score += 1.0
+        elif e == 'Surprise': eng_score += 0.8
+        elif e == 'Neutral': eng_score += 0.5
+        else: eng_score -= 0.2
+    engagement = max(0, min(100, (eng_score / total) * 100))
 
-    # Risk Index
-    risk_count = safe_counts['Sad'] + safe_counts['Fear'] + safe_counts['Angry']
-    risk_index = (risk_count / total * 100) if total > 0 else 0
+    # 5. At Risk Index (Negative Emotions)
+    risk = ((safe_counts['Sad'] + safe_counts['Angry'] + safe_counts['Fear']) / total) * 100
 
-    # Smart Recommendation
-    rec = "Maintain current pace."
-    if risk_index > 30: rec = "⚠ High negative emotions. Consider a break."
-    elif engagement_score > 75: rec = "🌟 Excellent engagement! Keep it up."
-    elif engagement_score < 40: rec = "📉 Energy low. Try an interactive activity."
+    # 6. Estimated Attendance (Assuming avg student scanned 2 times)
+    attendance = int(total / 1.5)
 
     return {
         "total_faces": total,
-        "counts": safe_counts, # Raw counts for Happy, Neutral, etc.
-        "distribution": {k: round(v/total*100, 1) for k, v in safe_counts.items()},
-        "engagement_score": round(engagement_score, 1),
-        "at_risk_index": round(risk_index, 1),
-        "dominant_emotion": counts.most_common(1)[0][0] if counts else "None",
-        "recommendation": rec
+        "counts": safe_counts,
+        "confusion_index": round(confusion, 1),
+        "boredom_meter": round(boredom, 1),
+        "vibe_score": round(vibe, 1),
+        "engagement_score": round(engagement, 1),
+        "at_risk_index": round(risk, 1),
+        "attendance_est": attendance
     }
 
 def get_system_health():
@@ -139,3 +157,36 @@ def get_system_health():
         "cpu_usage": psutil.cpu_percent(),
         "ram_usage": psutil.virtual_memory().percent
     }
+
+def generate_pdf(session_id):
+    if session_id not in sessions: return None
+    
+    filename = f"report_{session_id}.pdf"
+    c = canvas.Canvas(filename, pagesize=letter)
+    
+    data = sessions[session_id]
+    stats = calculate_advanced_stats(data['entry_data'] + data['exit_data'])
+    info = data['info']
+    
+    # PDF Design
+    c.setFont("Helvetica-Bold", 20)
+    c.drawString(50, 750, "EduMotion Analytics Report")
+    
+    c.setFont("Helvetica", 12)
+    c.drawString(50, 720, f"Session: {info['class_name']}")
+    c.drawString(50, 700, f"Instructor: {info['instructor']}")
+    c.drawString(50, 680, f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    
+    c.line(50, 660, 550, 660)
+    
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, 630, "Key Metrics")
+    
+    c.setFont("Helvetica", 12)
+    c.drawString(70, 600, f"• Room Vibe Score: {stats['vibe_score']}/10")
+    c.drawString(70, 580, f"• Confusion Index: {stats['confusion_index']}%")
+    c.drawString(70, 560, f"• Boredom Meter: {stats['boredom_meter']}%")
+    c.drawString(70, 540, f"• Estimated Attendance: {stats['attendance_est']} Students")
+    
+    c.save()
+    return filename

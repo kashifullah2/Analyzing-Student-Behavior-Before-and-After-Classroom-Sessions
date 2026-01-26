@@ -1,103 +1,117 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { Activity, BookOpen, User, Video, ShieldCheck, BarChart2, LayoutDashboard } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
+
+// Components
+import Sidebar from './components/Sidebar';
+import LiveSession from './components/LiveSession';
 import Dashboard from './components/Dashboard';
-import MediaCapture from './components/MediaCapture';
-import Analytics from './components/Analytics'; // <--- IMPORT NEW PAGE
+import Analytics from './components/Analytics';
+import AICoach from './components/AICoach'; // New Full Page
+import { PlaceholderPage } from './components/Placeholders'; // New
+import { Login, Signup } from './components/Auth';
 
-function App() {
-  const [sessionData, setSessionData] = useState({ name: '', class_name: '', instructor: '' });
+const MainLayout = ({ token, setToken }) => {
   const [activeSession, setActiveSession] = useState(null);
+  const [view, setView] = useState('dashboard');
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState('dashboard'); // 'dashboard' or 'analytics'
+  const [sessionForm, setSessionForm] = useState({ name: '', class_name: '', instructor: '' });
 
-  const handleInputChange = (e) => setSessionData({ ...sessionData, [e.target.name]: e.target.value });
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+  };
 
   const createSession = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/sessions/create', sessionData);
-      setActiveSession(response.data);
-    } catch (error) { alert("Backend connection failed."); }
+      const res = await axios.post('http://localhost:8000/sessions/create', sessionForm);
+      setActiveSession(res.data);
+      setView('session');
+    } catch (error) { alert("Backend Error"); }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
-      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="bg-indigo-600 p-2 rounded-lg">
-              <Activity className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-800 leading-tight">Analyzing Student Behavior Before and After Classroom Sessions</h1>
-              <p className="text-xs text-slate-500">AI-Based System</p>
-            </div>
-          </div>
-          
-          {/* NAVIGATION BUTTONS */}
-          {activeSession && (
-            <div className="flex space-x-2">
-                <button 
-                  onClick={() => setView('dashboard')}
-                  className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${view === 'dashboard' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                >
-                  <LayoutDashboard className="w-4 h-4 mr-2" /> Dashboard
-                </button>
-                <button 
-                  onClick={() => setView('analytics')}
-                  className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${view === 'analytics' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                >
-                  <BarChart2 className="w-4 h-4 mr-2" /> Analytics
-                </button>
-            </div>
-          )}
-        </div>
-      </header>
+    <div className="flex min-h-screen bg-slate-950">
+      <Sidebar view={view} setView={setView} handleLogout={handleLogout} />
 
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex-1 ml-64 p-8 overflow-y-auto h-screen">
+        
+        {/* Dynamic Header */}
+        <header className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              {view === 'dashboard' && 'Dashboard Overview'}
+              {view === 'session' && 'Live Monitor'}
+              {view === 'analytics' && 'Deep Analytics'}
+              {view === 'assistant' && 'AI Pedagogical Coach'}
+              {view === 'history' && 'Session Archive'}
+              {view === 'settings' && 'System Configuration'}
+            </h2>
+            <p className="text-slate-500 text-sm">Real-time Emotion Analysis Engine</p>
+          </div>
+          {activeSession && (
+             <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2 rounded-full">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                </span>
+                <span className="text-xs font-bold text-white uppercase tracking-wider">{activeSession.class_name}</span>
+             </div>
+          )}
+        </header>
+
+        {/* Content Area */}
         {!activeSession ? (
-          <div className="flex justify-center items-center min-h-[60vh]">
-            {/* ... (Keep existing form code exactly the same) ... */}
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-              <div className="bg-indigo-600 px-8 py-6">
-                <h2 className="text-2xl font-bold text-white">New Session</h2>
-                <p className="text-indigo-100 mt-1">Initialize analysis for a new class.</p>
-              </div>
-              <form onSubmit={createSession} className="p-8 space-y-6">
-                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Session Title</label><input type="text" name="name" required className="modern-input" value={sessionData.name} onChange={handleInputChange} /></div>
-                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Class</label><input type="text" name="class_name" required className="modern-input" value={sessionData.class_name} onChange={handleInputChange} /></div>
-                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Instructor</label><input type="text" name="instructor" required className="modern-input" value={sessionData.instructor} onChange={handleInputChange} /></div>
-                <button type="submit" disabled={loading} className="w-full btn-gradient py-3 rounded-xl">{loading ? 'Starting...' : 'Start Session'}</button>
-              </form>
+          <div className="flex flex-col items-center justify-center h-[70vh]">
+            <div className="dashboard-card p-12 max-w-lg w-full text-center">
+               <div className="w-16 h-16 bg-cyan-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6 text-cyan-400">
+                  <Sparkles size={32} />
+               </div>
+               <h2 className="text-2xl font-bold text-white mb-2">Initialize Session</h2>
+               <p className="text-slate-500 mb-8">Configure the neural network parameters to begin class monitoring.</p>
+               
+               <form onSubmit={createSession} className="space-y-4 text-left">
+                  <input className="input-field" placeholder="Session Name" onChange={e => setSessionForm({...sessionForm, name: e.target.value})} required />
+                  <input className="input-field" placeholder="Class Code" onChange={e => setSessionForm({...sessionForm, class_name: e.target.value})} required />
+                  <input className="input-field" placeholder="Instructor Name" onChange={e => setSessionForm({...sessionForm, instructor: e.target.value})} required />
+                  <button disabled={loading} className="w-full btn-primary mt-4">
+                    {loading ? 'Booting System...' : 'Launch Monitor'} <ArrowRight size={18} />
+                  </button>
+               </form>
             </div>
           </div>
         ) : (
-          <div className="space-y-8 animate-fade-in-up">
-            {/* VIEW SWITCHER LOGIC */}
-            {view === 'dashboard' ? (
-                <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                            <h2 className="text-lg font-bold text-slate-800 mb-4">Entry Gate</h2>
-                            <MediaCapture sessionId={activeSession.id} type="entry" />
-                        </div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                            <h2 className="text-lg font-bold text-slate-800 mb-4">Exit Gate</h2>
-                            <MediaCapture sessionId={activeSession.id} type="exit" />
-                        </div>
-                    </div>
-                    <div className="mt-8"><Dashboard sessionId={activeSession.id} /></div>
-                </>
-            ) : (
-                <Analytics sessionId={activeSession.id} />
-            )}
+          <div className="animate-fade-in-up">
+            {view === 'dashboard' && <Dashboard sessionId={activeSession.id} />}
+            {view === 'session' && <LiveSession sessionId={activeSession.id} />}
+            {view === 'analytics' && <Analytics sessionId={activeSession.id} />}
+            {view === 'assistant' && <AICoach sessionId={activeSession.id} />}
+            
+            {/* Placeholders for new buttons */}
+            {view === 'history' && <PlaceholderPage title="Session History" />}
+            {view === 'settings' && <PlaceholderPage title="Global Settings" />}
           </div>
         )}
-      </main>
+      </div>
     </div>
+  );
+};
+
+// ... Router Wrapper (Same as before) ...
+function App() {
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={!token ? <Login setToken={setToken} /> : <Navigate to="/dashboard" />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/dashboard" element={token ? <MainLayout token={token} setToken={setToken} /> : <Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 

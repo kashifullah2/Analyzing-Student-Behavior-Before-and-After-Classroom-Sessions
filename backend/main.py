@@ -1,14 +1,25 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from datetime import datetime
+from passlib.context import CryptContext
+from jose import jwt, JWTError
+from datetime import datetime, timedelta
 import uuid
 import io
 import pandas as pd
-import services # Import the updated services
+import os
 
-app = FastAPI(title="EduMotion Advanced API")
+# Local Imports
+import models
+import database
+import services # <--- This is where calculate_advanced_stats comes from
+import ai_service
+
+# --- CONFIG ---
+models.Base.metadata.create_all(bind=database.engine)
+app = FastAPI(title="EduMotion AI API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,87 +29,122 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-sessions = {}
+SECRET_KEY = "YOUR_SECRET_KEY"
+ALGORITHM = "HS256"
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# --- Models ---
+# --- AUTH ROUTES ---
+class UserAuth(BaseModel):
+    username: str
+    password: str
+    # Add other fields as optional for login validation if needed
+
+class UserSignup(BaseModel):
+    username: str
+    email: str
+    phone: str
+    gender: str
+    address: str
+    password: str
+    confirm_password: str
+
+@app.post("/signup")
+def signup(user: UserSignup, db: Session = Depends(database.get_db)):
+    if user.password != user.confirm_password:
+        raise HTTPException(400, "Passwords do not match")
+    
+    hashed_pw = pwd_context.hash(user.password)
+    new_user = models.User(
+        username=user.username, email=user.email, phone=user.phone,
+        gender=user.gender, address=user.address, hashed_password=hashed_pw
+    )
+    db.add(new_user)
+    db.commit()
+    return {"message": "User created"}
+
+@app.post("/login")
+def login(user: UserAuth, db: Session = Depends(database.get_db)):
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    if not db_user or not pwd_context.verify(user.password, db_user.hashed_password):
+        raise HTTPException(401, "Invalid credentials")
+    
+    token = jwt.encode({"sub": db_user.username}, SECRET_KEY, algorithm=ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
+
+# --- SESSION ROUTES ---
 class SessionCreate(BaseModel):
     name: str
     class_name: str
     instructor: str
 
-class SessionResponse(BaseModel):
-    id: str
-    name: str
-    created_at: str
-
-# --- Routes ---
-
-@app.post("/sessions/create", response_model=SessionResponse)
+@app.post("/sessions/create")
 async def create_session(session: SessionCreate):
     session_id = str(uuid.uuid4())
-    sessions[session_id] = {
+    services.sessions[session_id] = {
         "info": session.dict(),
         "created_at": datetime.now().isoformat(),
         "entry_data": [],
         "exit_data": []
     }
-    return {"id": session_id, "name": session.name, "created_at": sessions[session_id]["created_at"]}
+    return {"id": session_id, "name": session.name}
 
+# --- ANALYZE ROUTES ---
 @app.post("/sessions/{session_id}/analyze")
 async def analyze_frame(session_id: str, type: str = Form(...), file: UploadFile = File(...)):
-    if session_id not in sessions: raise HTTPException(404, "Session not found")
-    
+    if session_id not in services.sessions: raise HTTPException(404, "Session not found")
     contents = await file.read()
     results = services.detect_emotion_from_frame(contents)
-    
     timestamp = datetime.now().isoformat()
     for res in results:
-        # Add timestamp for Trend Analysis
-        sessions[session_id][f"{type}_data"].append({**res, "timestamp": timestamp})
-            
-    return {"faces_detected": len(results), "results": results}
+        services.sessions[session_id][f"{type}_data"].append({**res, "timestamp": timestamp})
+    return {"results": results}
 
 @app.post("/sessions/{session_id}/analyze_video")
 async def analyze_video(session_id: str, type: str = Form(...), file: UploadFile = File(...)):
-    if session_id not in sessions: raise HTTPException(404, "Session not found")
-    
+    if session_id not in services.sessions: raise HTTPException(404, "Session not found")
     contents = await file.read()
     results = services.process_video_file(contents)
-    
     timestamp = datetime.now().isoformat()
     for res in results:
-        sessions[session_id][f"{type}_data"].append({**res, "timestamp": timestamp})
-            
-    return {"status": "success", "count": len(results)}
+        services.sessions[session_id][f"{type}_data"].append({**res, "timestamp": timestamp})
+    return {"status": "success"}
 
+# --- REPORTING ROUTES ---
 @app.get("/sessions/{session_id}/report")
 async def get_report(session_id: str):
-    if session_id not in sessions: raise HTTPException(404, "Session not found")
+    if session_id not in services.sessions: raise HTTPException(404, "Session not found")
+    data = services.sessions[session_id]
     
-    data = sessions[session_id]
+    # THIS WAS THE FIX: Ensuring the function exists in services.py
+    entry_stats = services.calculate_advanced_stats(data["entry_data"])
+    exit_stats = services.calculate_advanced_stats(data["exit_data"])
     
     return {
         "session_info": data["info"],
-        "entry_stats": services.calculate_advanced_stats(data["entry_data"]),
-        "exit_stats": services.calculate_advanced_stats(data["exit_data"]),
-        "system_health": services.get_system_health() # New Feature
+        "entry_stats": entry_stats,
+        "exit_stats": exit_stats,
+        "system_health": services.get_system_health()
     }
 
-@app.get("/sessions/{session_id}/export")
-async def export_csv(session_id: str):
-    if session_id not in sessions: raise HTTPException(404, "Session not found")
+@app.get("/sessions/{session_id}/export_pdf")
+async def export_pdf(session_id: str):
+    if session_id not in services.sessions: raise HTTPException(404, "Session not found")
     
-    data = sessions[session_id]
+    pdf_path = services.generate_pdf(session_id)
+    if not pdf_path: raise HTTPException(500, "PDF Generation failed")
     
-    # Flatten data for CSV
-    all_records = []
-    for r in data["entry_data"]: all_records.append({**r, "Type": "Entry"})
-    for r in data["exit_data"]: all_records.append({**r, "Type": "Exit"})
+    return FileResponse(pdf_path, media_type='application/pdf', filename=f"Report_{session_id}.pdf")
+
+@app.post("/sessions/{session_id}/chat")
+async def chat_with_assistant(session_id: str, chat: ai_service.ChatRequest):
+    if session_id not in services.sessions: raise HTTPException(404, "Session not found")
     
-    df = pd.DataFrame(all_records)
-    stream = io.StringIO()
-    df.to_csv(stream, index=False)
+    data = services.sessions[session_id]
+    stats = {
+        "info": data["info"],
+        "entry_stats": services.calculate_advanced_stats(data["entry_data"]),
+        "exit_stats": services.calculate_advanced_stats(data["exit_data"])
+    }
     
-    response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
-    response.headers["Content-Disposition"] = f"attachment; filename=session_{session_id}.csv"
-    return response
+    response = ai_service.ask_teaching_assistant(chat.question, stats)
+    return {"response": response}
