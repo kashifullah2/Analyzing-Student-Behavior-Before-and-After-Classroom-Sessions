@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+*.sqlite3
+*.log
+
+# Python virtual environment
+venv/
+env/
+
+# PyCharm / VSCode files
+.idea/
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Models and large data files
+*.h5
+*.pt
+*.ckpt
+*.pkl
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+npm-debug.log
+yarn-error.log
+
+# OS files
+.DS_Store
+Thumbs.db
