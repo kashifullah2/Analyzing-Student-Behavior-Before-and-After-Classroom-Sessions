@@ -1,5 +1,9 @@
 from pydantic import BaseModel
 
+class UserAuth(BaseModel):
+    username: str
+    password: str
+
 class UserSignup(BaseModel):
     username: str
     email: str
@@ -8,7 +12,3 @@ class UserSignup(BaseModel):
     address: str
     password: str
     confirm_password: str
-
-class UserAuth(BaseModel):
-    username: str
-    password: str

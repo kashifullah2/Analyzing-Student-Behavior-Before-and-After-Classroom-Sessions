@@ -7,21 +7,23 @@ const Sidebar = ({ view, setView, handleLogout }) => {
     { id: 'dashboard', label: 'Overview', icon: LayoutGrid },
     { id: 'session', label: 'Live Monitor', icon: Radio },
     { id: 'analytics', label: 'Deep Analytics', icon: BarChart3 },
-    { id: 'assistant', label: 'AI Coach', icon: Bot }, // Now a full page
-    { id: 'history', label: 'Session History', icon: Clock }, // New Placeholder
-    { id: 'settings', label: 'Settings', icon: Settings },    // New Placeholder
+    { id: 'assistant', label: 'AI Coach', icon: Bot },
+    // { id: 'history', label: 'Session History', icon: Clock },
+    // { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   return (
-    <div className="w-64 h-screen fixed left-0 top-0 bg-slate-950 border-r border-slate-800 flex flex-col z-50">
+    <div className="w-64 h-screen fixed left-0 top-0 bg-white border-r border-slate-200 flex flex-col z-50">
       
       {/* Brand */}
-      <div className="h-20 flex items-center px-6 border-b border-slate-900">
+      <div className="h-20 flex items-center px-6 border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <Hexagon className="text-cyan-500 fill-cyan-500/10" size={28} />
+          <div className="bg-indigo-600 p-1.5 rounded-lg">
+             <Hexagon className="text-white fill-white/20" size={24} />
+          </div>
           <div>
-            <h1 className="font-bold text-white tracking-tight">EduMotion</h1>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Enterprise</p>
+            <h1 className="font-bold text-slate-900 tracking-tight text-lg">ASBBAACS</h1>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">AI-Based</p>
           </div>
         </div>
       </div>
@@ -37,12 +39,12 @@ const Sidebar = ({ view, setView, handleLogout }) => {
               className={`
                 w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all
                 ${isActive 
-                  ? 'bg-slate-900 text-cyan-400 border border-slate-800' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                 }
               `}
             >
-              <item.icon size={18} />
+              <item.icon size={18} className={isActive ? "text-indigo-600" : "text-slate-400"} />
               {item.label}
             </button>
           );
@@ -50,10 +52,10 @@ const Sidebar = ({ view, setView, handleLogout }) => {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-900">
+      <div className="p-4 border-t border-slate-100">
         <button 
           onClick={handleLogout} 
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500/10 text-sm font-medium transition-all"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 text-sm font-medium transition-all"
         >
           <LogOut size={18} />
           Sign Out

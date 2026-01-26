@@ -4,28 +4,28 @@
 @layer base {
   body {
     font-family: 'Inter', sans-serif;
-    @apply bg-slate-950 text-slate-200 overflow-x-hidden;
+    @apply bg-slate-50 text-slate-800 overflow-x-hidden;
   }
 }
 
 @layer components {
-  /* THEME: MIDNIGHT PRO */
+  /* THEME: HORIZON LIGHT */
   
-  /* Main Container Logic */
+  /* Main Card Logic */
   .dashboard-card {
-    @apply bg-slate-900 border border-slate-800 rounded-xl shadow-sm transition-all duration-200;
+    @apply bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-200;
   }
   
   .dashboard-card:hover {
-    @apply border-slate-700 shadow-md;
+    @apply border-indigo-200 shadow-md shadow-indigo-100;
   }
 
   /* Typography */
   .heading-xl {
-    @apply text-2xl font-bold text-white tracking-tight;
+    @apply text-2xl font-bold text-slate-900 tracking-tight;
   }
   .heading-lg {
-    @apply text-lg font-semibold text-white;
+    @apply text-lg font-semibold text-slate-900;
   }
   .text-muted {
     @apply text-slate-500 text-sm;
@@ -33,35 +33,31 @@
 
   /* Inputs & Buttons */
   .input-field {
-    @apply w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 text-white outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-600;
+    @apply w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400;
   }
 
   .btn-primary {
-    @apply bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-2.5 px-5 rounded-lg shadow-lg shadow-cyan-900/20 transition-all active:scale-95 flex items-center justify-center gap-2;
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-2;
   }
 
   .btn-ghost {
-    @apply bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2;
+    @apply bg-white hover:bg-slate-50 text-slate-600 hover:text-indigo-600 border border-slate-200 py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium;
   }
 
   /* Utilities */
   .accent-text {
-    @apply text-cyan-400 font-medium;
+    @apply text-indigo-600 font-medium;
   }
   
-  .status-dot {
-    @apply w-2 h-2 rounded-full;
-  }
-  
-  /* Custom Scrollbar for Chat */
+  /* Custom Scrollbar */
   .custom-scroll::-webkit-scrollbar {
     width: 6px;
   }
   .custom-scroll::-webkit-scrollbar-track {
-    background: #0f172a; 
+    background: #f1f5f9; 
   }
   .custom-scroll::-webkit-scrollbar-thumb {
-    background: #334155; 
+    background: #cbd5e1; 
     border-radius: 3px;
   }
 }

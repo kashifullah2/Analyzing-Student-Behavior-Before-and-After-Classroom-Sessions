@@ -10,12 +10,21 @@ import uuid
 import io
 import pandas as pd
 import os
+from dotenv import load_dotenv # Ensure dotenv is loaded
+
+# Import local modules
 import models
 import database
 import services
 import ai_service
-from schemas import UserSignup, UserAuth
+# Make sure backend/schemas.py exists!
+from schemas import UserSignup, UserAuth 
+
+# Load Environment Variables
+load_dotenv()
+
 models.Base.metadata.create_all(bind=database.engine)
+
 app = FastAPI(title="EduMotion AI API")
 
 app.add_middleware(
@@ -26,12 +35,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- CONFIGURATION FIX ---
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("SECRET_KEY")
+# FIX: Use "ALGORITHM" from env, or default to "HS256" if missing
+ALGORITHM = os.getenv("ALGORITHM", "HS256") 
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
-
+# --- AUTH ROUTES ---
 @app.post("/signup")
 def signup(user: UserSignup, db: Session = Depends(database.get_db)):
     if user.password != user.confirm_password:
@@ -52,6 +63,7 @@ def login(user: UserAuth, db: Session = Depends(database.get_db)):
     if not db_user or not pwd_context.verify(user.password, db_user.hashed_password):
         raise HTTPException(401, "Invalid credentials")
     
+    # Ensure ALGORITHM is valid here
     token = jwt.encode({"sub": db_user.username}, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
 
@@ -99,7 +111,6 @@ async def get_report(session_id: str):
     if session_id not in services.sessions: raise HTTPException(404, "Session not found")
     data = services.sessions[session_id]
     
-    # THIS WAS THE FIX: Ensuring the function exists in services.py
     entry_stats = services.calculate_advanced_stats(data["entry_data"])
     exit_stats = services.calculate_advanced_stats(data["exit_data"])
     
