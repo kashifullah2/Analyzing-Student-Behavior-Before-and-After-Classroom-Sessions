@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* --- Global Styles --- */
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: #f3f4f6;
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Custom Components Layer --- */
+@layer components {
+  
+  /* Modern Input Field */
+  .modern-input {
+    @apply w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-3.5 outline-none transition-all duration-300;
+  }
+  .modern-input:focus {
+    @apply border-green-500 ring-4 ring-green-500/10 shadow-lg;
+  }
+
+  /* Gradient Button */
+  .btn-gradient {
+    @apply bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-green-600/30 transition-all duration-300 flex items-center justify-center gap-2;
+  }
+  .btn-gradient:hover {
+    @apply from-green-700 to-emerald-700 scale-[1.02];
+  }
+  .btn-gradient:active {
+    @apply scale-95;
+  }
+  .btn-gradient:disabled {
+    @apply opacity-70 cursor-not-allowed;
+  }
+
+  /* Hide Scrollbar */
+  .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+  }
+  .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+  }
+}
