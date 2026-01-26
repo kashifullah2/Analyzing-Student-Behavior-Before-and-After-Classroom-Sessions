@@ -10,14 +10,11 @@ import uuid
 import io
 import pandas as pd
 import os
-
-# Local Imports
 import models
 import database
-import services # <--- This is where calculate_advanced_stats comes from
+import services
 import ai_service
-
-# --- CONFIG ---
+from schemas import UserSignup, UserAuth
 models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI(title="EduMotion AI API")
 
@@ -29,24 +26,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SECRET_KEY = "YOUR_SECRET_KEY"
-ALGORITHM = "HS256"
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("SECRET_KEY")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# --- AUTH ROUTES ---
-class UserAuth(BaseModel):
-    username: str
-    password: str
-    # Add other fields as optional for login validation if needed
 
-class UserSignup(BaseModel):
-    username: str
-    email: str
-    phone: str
-    gender: str
-    address: str
-    password: str
-    confirm_password: str
 
 @app.post("/signup")
 def signup(user: UserSignup, db: Session = Depends(database.get_db)):

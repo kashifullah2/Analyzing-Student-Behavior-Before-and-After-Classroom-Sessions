@@ -9,6 +9,6 @@ class UserSignup(BaseModel):
     password: str
     confirm_password: str
 
-class UserLogin(BaseModel):
+class UserAuth(BaseModel):
     username: str
     password: str
