@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -7,16 +8,18 @@ from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime
 import uuid
-import os
 from dotenv import load_dotenv
 
+# Local Imports
 import models, database, services, ai_service
 from schemas import UserSignup, UserAuth
 
 load_dotenv()
 models.Base.metadata.create_all(bind=database.engine)
-app = FastAPI()
 
+app = FastAPI(title="EduMotion API")
+
+# CORS: Allow All for now (easier for deployment debugging)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,6 +32,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# --- AUTH ROUTES ---
 @app.post("/signup")
 def signup(user: UserSignup, db: Session = Depends(database.get_db)):
     if user.password != user.confirm_password: raise HTTPException(400, "Passwords mismatch")
@@ -45,13 +49,20 @@ def login(user: UserAuth, db: Session = Depends(database.get_db)):
     token = jwt.encode({"sub": db_user.username}, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
 
+# --- SESSION ROUTES ---
 class SessionCreate(BaseModel):
     name: str; class_name: str; instructor: str
 
 @app.post("/sessions/create")
 async def create_session(session: SessionCreate):
     sid = str(uuid.uuid4())
-    services.sessions[sid] = {"info": session.dict(), "created_at": datetime.now().isoformat(), "entry_data": [], "exit_data": [], "chat_history": []}
+    services.sessions[sid] = {
+        "info": session.dict(), 
+        "created_at": datetime.now().isoformat(), 
+        "entry_data": [], 
+        "exit_data": [], 
+        "chat_history": []
+    }
     return {"id": sid, "name": session.name}
 
 @app.get("/sessions/{session_id}/details")
@@ -65,11 +76,16 @@ async def get_session_history():
     for sid, data in services.sessions.items():
         stats = services.calculate_advanced_stats(data.get("entry_data", []))
         history.append({
-            "id": sid, "class_name": data["info"]["class_name"], "instructor": data["info"]["instructor"],
-            "created_at": data["created_at"], "vibe_score": stats["vibe_score"], "attendance": stats["attendance_est"]
+            "id": sid, 
+            "class_name": data["info"]["class_name"], 
+            "instructor": data["info"]["instructor"],
+            "created_at": data["created_at"], 
+            "vibe_score": stats["vibe_score"], 
+            "attendance": stats["attendance_est"]
         })
     return sorted(history, key=lambda x: x['created_at'], reverse=True)
 
+# --- ANALYSIS ROUTES ---
 @app.post("/sessions/{session_id}/analyze")
 async def analyze_frame(session_id: str, type: str = Form(...), file: UploadFile = File(...)):
     if session_id not in services.sessions: raise HTTPException(404, "Not Found")
@@ -77,6 +93,12 @@ async def analyze_frame(session_id: str, type: str = Form(...), file: UploadFile
     timestamp = datetime.now().isoformat()
     for r in res: services.sessions[session_id][f"{type}_data"].append({**r, "timestamp": timestamp})
     return {"results": res}
+
+@app.post("/sessions/{session_id}/analyze_video")
+async def analyze_video(session_id: str, type: str = Form(...), file: UploadFile = File(...)):
+    if session_id not in services.sessions: raise HTTPException(404, "Not Found")
+    # Video logic placeholder (just returns success for now)
+    return {"status": "success"}
 
 @app.get("/sessions/{session_id}/report")
 async def get_report(session_id: str):
@@ -88,7 +110,8 @@ async def get_report(session_id: str):
 
 @app.get("/sessions/{session_id}/export_pdf")
 async def export_pdf(session_id: str):
-    return FileResponse(services.generate_pdf(session_id), media_type='application/pdf', filename="report.pdf")
+    path = services.generate_pdf(session_id)
+    return FileResponse(path, media_type='application/pdf', filename="report.pdf")
 
 @app.post("/sessions/{session_id}/chat")
 async def chat_with_assistant(session_id: str, chat: ai_service.ChatRequest):
