@@ -80,7 +80,8 @@ async def create_session(session: SessionCreate):
         "info": session.dict(),
         "created_at": datetime.now().isoformat(),
         "entry_data": [],
-        "exit_data": []
+        "exit_data": [],
+        "chat_history": []
     }
     return {"id": session_id, "name": session.name}
 
@@ -135,11 +136,58 @@ async def chat_with_assistant(session_id: str, chat: ai_service.ChatRequest):
     if session_id not in services.sessions: raise HTTPException(404, "Session not found")
     
     data = services.sessions[session_id]
+    
+    # Save User Message
+    data["chat_history"].append({"role": "user", "text": chat.question, "time": datetime.now().isoformat()})
+
     stats = {
         "info": data["info"],
         "entry_stats": services.calculate_advanced_stats(data["entry_data"]),
         "exit_stats": services.calculate_advanced_stats(data["exit_data"])
     }
     
-    response = ai_service.ask_teaching_assistant(chat.question, stats)
-    return {"response": response}
+    response_text = ai_service.ask_teaching_assistant(chat.question, stats)
+    
+    # Save Bot Response
+    data["chat_history"].append({"role": "bot", "text": response_text, "time": datetime.now().isoformat()})
+    
+    return {"response": response_text}
+
+
+
+
+@app.get("/sessions/{session_id}/details")
+async def get_session_details(session_id: str):
+    """
+    Restores session data when the user refreshes the page.
+    """
+    if session_id not in services.sessions: 
+        raise HTTPException(404, "Session not found")
+    
+    return services.sessions[session_id]
+
+
+
+@app.get("/sessions/history")
+async def get_session_history():
+    """
+    Returns a summary list of all past sessions for the History page.
+    """
+    history = []
+    for session_id, data in services.sessions.items():
+        # Calculate a quick summary so the frontend can show scores in the list
+        # We handle cases where data might be empty to prevent errors
+        entry_stats = services.calculate_advanced_stats(data.get("entry_data", []))
+        
+        history.append({
+            "id": session_id,
+            "session_name": data["info"].get("name", "Unnamed Session"),
+            "class_name": data["info"].get("class_name", "Unknown Class"),
+            "instructor": data["info"].get("instructor", "Unknown"),
+            "created_at": data.get("created_at", datetime.now().isoformat()),
+            "vibe_score": entry_stats.get("vibe_score", 0),
+            "attendance": entry_stats.get("attendance_est", 0)
+        })
+    
+    # Return newest sessions first
+    return sorted(history, key=lambda x: x['created_at'], reverse=True)

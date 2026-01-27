@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { Sparkles, ArrowRight, Code, Shield, FileText } from 'lucide-react';
@@ -18,7 +18,45 @@ const MainLayout = ({ token, setToken }) => {
   const [loading, setLoading] = useState(false);
   const [sessionForm, setSessionForm] = useState({ name: '', class_name: '', instructor: '' });
 
-  const handleLogout = () => { localStorage.removeItem('token'); setToken(null); };
+  // --- FIX 1: RESTORE SESSION ON REFRESH ---
+  useEffect(() => {
+    const savedSessionId = localStorage.getItem('activeSessionId');
+    if (savedSessionId) {
+      // If we have an ID, try to get data from backend
+      axios.get(`http://localhost:8000/sessions/${savedSessionId}/details`)
+        .then(res => {
+          // Success! We found the session in memory.
+          setActiveSession({
+            id: savedSessionId,
+            ...res.data.info
+          });
+          // Note: If you want to force stay on 'session' view:
+          // setView('session');
+        })
+        .catch(err => {
+          // Backend forgot the session (e.g., server restart). Clear frontend.
+          console.warn("Session expired or server restarted.");
+          localStorage.removeItem('activeSessionId');
+          setActiveSession(null);
+        });
+    }
+  }, []); // Run once on mount
+
+  const handleLogout = () => { 
+    localStorage.removeItem('token'); 
+    localStorage.removeItem('activeSessionId'); // Clear session
+    setToken(null); 
+  };
+
+  // --- FIX 2: CREATE NEW SESSION BUTTON LOGIC ---
+  const handleNewSession = () => {
+    if (window.confirm("Start a new session? Current monitoring data will be archived.")) {
+      setActiveSession(null);
+      localStorage.removeItem('activeSessionId');
+      setView('dashboard'); // Will show the "Initialize" form
+      setSessionForm({ name: '', class_name: '', instructor: '' }); // Reset form
+    }
+  };
 
   const createSession = async (e) => {
     e.preventDefault();
@@ -26,6 +64,10 @@ const MainLayout = ({ token, setToken }) => {
     try {
       const res = await axios.post('http://localhost:8000/sessions/create', sessionForm);
       setActiveSession(res.data);
+      
+      // Save ID so it persists on refresh
+      localStorage.setItem('activeSessionId', res.data.id);
+      
       setView('session');
     } catch (error) { alert("Backend Error"); }
     setLoading(false);
@@ -34,14 +76,17 @@ const MainLayout = ({ token, setToken }) => {
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
       
-      {/* Sidebar Navigation */}
-      <Sidebar view={view} setView={setView} handleLogout={handleLogout} />
+      {/* Sidebar now gets handleNewSession */}
+      <Sidebar 
+        view={view} 
+        setView={setView} 
+        handleLogout={handleLogout} 
+        handleNewSession={handleNewSession} 
+      />
 
-      {/* Main Content Area */}
       <div className="flex-1 ml-64 h-screen overflow-y-auto flex flex-col">
         
         <div className="p-8 flex-1">
-          {/* Header */}
           <header className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -65,7 +110,6 @@ const MainLayout = ({ token, setToken }) => {
             )}
           </header>
 
-          {/* Dynamic Content Views */}
           {!activeSession ? (
             <div className="flex flex-col items-center justify-center h-[60vh]">
               <div className="dashboard-card p-12 max-w-lg w-full text-center bg-white">
@@ -76,9 +120,9 @@ const MainLayout = ({ token, setToken }) => {
                  <p className="text-slate-500 mb-8">Configure the neural network parameters to begin class monitoring.</p>
                  
                  <form onSubmit={createSession} className="space-y-4 text-left">
-                    <input className="input-field" placeholder="Session Name" onChange={e => setSessionForm({...sessionForm, name: e.target.value})} required />
-                    <input className="input-field" placeholder="Class Code" onChange={e => setSessionForm({...sessionForm, class_name: e.target.value})} required />
-                    <input className="input-field" placeholder="Instructor Name" onChange={e => setSessionForm({...sessionForm, instructor: e.target.value})} required />
+                    <input className="input-field" placeholder="Session Name" value={sessionForm.name} onChange={e => setSessionForm({...sessionForm, name: e.target.value})} required />
+                    <input className="input-field" placeholder="Class Code" value={sessionForm.class_name} onChange={e => setSessionForm({...sessionForm, class_name: e.target.value})} required />
+                    <input className="input-field" placeholder="Instructor Name" value={sessionForm.instructor} onChange={e => setSessionForm({...sessionForm, instructor: e.target.value})} required />
                     <button disabled={loading} className="w-full btn-primary mt-4">
                       {loading ? 'Booting System...' : 'Launch Monitor'} <ArrowRight size={18} />
                     </button>
@@ -97,11 +141,8 @@ const MainLayout = ({ token, setToken }) => {
           )}
         </div>
 
-        {/* --- PROFESSIONAL FOOTER --- */}
         <footer className="mt-auto border-t border-slate-200 bg-white">
             <div className="max-w-7xl mx-auto px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                
-                {/* Left: Project Identity */}
                 <div className="text-center md:text-left">
                     <h3 className="text-sm font-bold text-slate-900">
                         Analyzing Student Behavior
@@ -111,29 +152,18 @@ const MainLayout = ({ token, setToken }) => {
                     </p>
                 </div>
 
-                {/* Center: Developer Credit */}
                 <div className="flex items-center gap-2 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100">
-                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Developed by</span>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Engineered by</span>
                     <span className="text-xs font-bold text-indigo-600 flex items-center gap-1">
                         Kashif Ullah <Code size={12} />
                     </span>
                 </div>
 
-                {/* Right: Meta Links */}
                 <div className="text-center md:text-right">
                     <p className="text-[10px] text-slate-400">
                         © {new Date().getFullYear()} Final Year Project
                     </p>
-                    <div className="flex gap-4 justify-center md:justify-end mt-1">
-                        <span className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors">
-                            <Shield size={10} /> Privacy Policy
-                        </span>
-                        <span className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors">
-                            <FileText size={10} /> Documentation
-                        </span>
-                    </div>
                 </div>
-
             </div>
         </footer>
 

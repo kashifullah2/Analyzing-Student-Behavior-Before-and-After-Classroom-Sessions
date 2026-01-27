@@ -48,7 +48,7 @@ const MediaCapture = ({ sessionId, type }) => {
   };
 
   return (
-    <div className="w-full h-full relative group bg-black/40">
+    <div className="w-full h-full relative group bg-white/10">
       
       {/* Floating Mode Switcher */}
       <div className="absolute top-4 right-4 z-30 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

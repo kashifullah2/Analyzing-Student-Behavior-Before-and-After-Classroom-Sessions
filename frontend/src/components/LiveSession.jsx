@@ -92,7 +92,7 @@ const LiveSession = ({ sessionId }) => {
         </div>
       </div>
 
-      {/* 3. Action Bar */}
+      {/* 3. Action Bar
       <div className="dashboard-card p-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
              <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
@@ -107,7 +107,7 @@ const LiveSession = ({ sessionId }) => {
              <button className="btn-ghost text-xs"><Flag size={14}/> Flag Event</button>
              <button className="btn-ghost text-xs"><MessageSquare size={14}/> Log Note</button>
           </div>
-      </div>
+      </div> */}
 
     </div>
   );

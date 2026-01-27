@@ -3,15 +3,10 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
-# 1. Load environment variables
 load_dotenv()
 
-# 2. Get the URL from .env
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-# 3. Create Engine
-# Note: Render/Neon sometimes give 'postgres://', SQLAlchemy needs 'postgresql://'
 if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 

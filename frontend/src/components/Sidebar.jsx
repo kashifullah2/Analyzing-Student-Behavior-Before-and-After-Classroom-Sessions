@@ -1,35 +1,50 @@
 import React from 'react';
-import { LayoutGrid, Radio, BarChart3, Bot, Clock, Settings, LogOut, Hexagon } from 'lucide-react';
+import { LayoutGrid, Radio, BarChart3, Bot, Clock, Settings, LogOut, GraduationCap, PlusCircle } from 'lucide-react';
 
-const Sidebar = ({ view, setView, handleLogout }) => {
+const Sidebar = ({ view, setView, handleLogout, handleNewSession }) => {
   
   const menu = [
     { id: 'dashboard', label: 'Overview', icon: LayoutGrid },
     { id: 'session', label: 'Live Monitor', icon: Radio },
     { id: 'analytics', label: 'Deep Analytics', icon: BarChart3 },
     { id: 'assistant', label: 'AI Coach', icon: Bot },
-    // { id: 'history', label: 'Session History', icon: Clock },
-    // { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'history', label: 'Session History', icon: Clock }, // <--- NOW ACTIVE
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   return (
     <div className="w-64 h-screen fixed left-0 top-0 bg-white border-r border-slate-200 flex flex-col z-50">
       
-      {/* Brand */}
-      <div className="h-20 flex items-center px-6 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="bg-indigo-600 p-1.5 rounded-lg">
-             <Hexagon className="text-white fill-white/20" size={24} />
+      {/* PROFESSIONAL PROJECT TITLE */}
+      <div className="h-24 flex flex-col justify-center px-6 border-b border-slate-100">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="bg-indigo-600 p-1.5 rounded-lg shrink-0">
+             <GraduationCap className="text-white" size={20} />
           </div>
-          <div>
-            <h1 className="font-bold text-slate-900 tracking-tight text-lg">ASBBAACS</h1>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">AI-Based</p>
-          </div>
+          <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full">
+            AI System
+          </span>
         </div>
+        <h1 className="font-bold text-slate-900 text-sm leading-tight">
+          Analyzing Student Behavior
+        </h1>
+        <p className="text-[10px] text-slate-500 mt-0.5">
+          Before & After Classroom Sessions
+        </p>
+      </div>
+
+      {/* CREATE SESSION BUTTON */}
+      <div className="p-4 pb-0">
+        <button 
+          onClick={handleNewSession}
+          className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
+        >
+          <PlusCircle size={18} /> New Session
+        </button>
       </div>
 
       {/* Menu */}
-      <div className="flex-1 py-6 px-3 space-y-1">
+      <div className="flex-1 py-4 px-3 space-y-1">
         {menu.map((item) => {
           const isActive = view === item.id;
           return (

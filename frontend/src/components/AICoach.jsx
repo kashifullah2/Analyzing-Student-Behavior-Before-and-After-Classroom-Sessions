@@ -3,19 +3,42 @@ import axios from 'axios';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
 
 const AICoach = ({ sessionId }) => {
-  const [messages, setMessages] = useState([
-    { role: 'bot', text: 'Hello! I am your AI Teaching Assistant. I have access to the current class metrics. How can I help you improve engagement?' }
-  ]);
+  // Initialize with a default welcome message, but we will merge history later
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
 
+  // 1. LOAD CHAT HISTORY ON MOUNT
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const res = await axios.get(`http://localhost:8000/sessions/${sessionId}/details`);
+        const history = res.data.chat_history || [];
+        
+        if (history.length > 0) {
+          // Convert backend format to frontend format if needed, or just use as is
+          setMessages(history);
+        } else {
+            // Default Welcome if no history
+            setMessages([{ role: 'bot', text: 'Hello! I am your AI Teaching Assistant. How can I help you improve engagement?' }]);
+        }
+      } catch (e) {
+        console.error("Failed to load chat history");
+      }
+    };
+    loadHistory();
+  }, [sessionId]);
+
+  // 2. AUTO SCROLL
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
     const userText = input;
+    
+    // Optimistic UI Update
     setMessages(prev => [...prev, { role: 'user', text: userText }]);
     setInput('');
     setLoading(true);
@@ -28,7 +51,6 @@ const AICoach = ({ sessionId }) => {
     }
     setLoading(false);
   };
-
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] dashboard-card overflow-hidden bg-white">
       

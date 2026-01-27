@@ -19,7 +19,7 @@ const AuthLayout = ({ children, title, subtitle }) => (
         <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-white/30">
            <Activity size={48} className="text-white" />
         </div>
-        <h1 className="text-5xl font-bold mb-6 tracking-tight">Student Emotion Analyzer AI</h1>
+        <h1 className="text-5xl font-bold mb-6 tracking-tight">Student Emotion Analyzer  AI</h1>
         <p className="text-indigo-100 text-xl font-light">
           Real-time emotional intelligence analytics for the modern classroom.
         </p>
