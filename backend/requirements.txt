@@ -7,7 +7,7 @@ python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
 tensorflow
-opencv-python-headless==4.8.1.78
+opencv-python-headless
 reportlab
 langchain-groq
 langchain-core
