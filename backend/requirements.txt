@@ -13,3 +13,4 @@ langchain-groq
 langchain-core 
 pandas 
 numpy
+pip install opencv-python-headless
