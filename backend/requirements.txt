@@ -13,3 +13,5 @@ langchain-groq
 langchain-core
 pandas
 numpy
+psutil
+gunicorn
