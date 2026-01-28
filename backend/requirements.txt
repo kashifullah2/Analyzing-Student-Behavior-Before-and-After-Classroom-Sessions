@@ -5,7 +5,8 @@ psycopg2-binary
 python-dotenv
 python-multipart
 python-jose[cryptography]
-passlib[bcrypt]
+passlib
+bcrypt==4.0.1
 tensorflow-cpu
 opencv-python-headless
 reportlab
