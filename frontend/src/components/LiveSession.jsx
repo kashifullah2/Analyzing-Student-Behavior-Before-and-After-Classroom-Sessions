@@ -7,14 +7,21 @@ const LiveSession = ({ sessionId }) => {
   const [metrics, setMetrics] = useState(null);
 
   useEffect(() => {
+    let interval;
     const fetch = async () => {
       try {
-        // api.js handles the base URL automatically
         const res = await api.get(`/sessions/${sessionId}/report`);
         setMetrics(res.data.entry_stats);
-      } catch (e) { }
+      } catch (e) {
+        if (e.response && e.response.status === 404) {
+          console.warn("Session not found, stopping poll.");
+          clearInterval(interval);
+          // Optional: redirect or alert user
+        }
+      }
     };
-    const interval = setInterval(fetch, 2000);
+    fetch(); // Initial fetch
+    interval = setInterval(fetch, 2000);
     return () => clearInterval(interval);
   }, [sessionId]);
 
