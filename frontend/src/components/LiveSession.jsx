@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MediaCapture from './MediaCapture';
-import axios from 'axios';
-import { API_URL } from '../config';
+import api from '../api';
 import { Activity, Users, Zap, AlertTriangle } from 'lucide-react';
 
 const LiveSession = ({ sessionId }) => {
@@ -10,7 +9,8 @@ const LiveSession = ({ sessionId }) => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await axios.get(`${API_URL}/sessions/${sessionId}/report`);
+        // api.js handles the base URL automatically
+        const res = await api.get(`/sessions/${sessionId}/report`);
         setMetrics(res.data.entry_stats);
       } catch (e) { }
     };
