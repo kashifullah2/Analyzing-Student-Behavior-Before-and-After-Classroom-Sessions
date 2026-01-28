@@ -54,20 +54,27 @@ const MediaCapture = ({ sessionId, type }) => {
             if (Array.isArray(bbox) && bbox.length === 4) {
               const [x, y, w, h] = bbox;
 
+              // Calculate mirrored X coordinate because video is mirrored (CSS) but canvas is not
+              const videoWidth = video.videoWidth;
+              // If face is at X on left of image, it appears on Right of mirrored video.
+              // So we need to draw at (TotalWidth - X - Width)
+              const mirroredX = videoWidth - x - w;
+
               // Draw Bounding Box
               ctx.strokeStyle = '#00FF00'; // Green
               ctx.lineWidth = 3;
-              ctx.strokeRect(x, y, w, h);
+              ctx.strokeRect(mirroredX, y, w, h);
 
               // Draw Label Background
               ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
               const textWidth = ctx.measureText(det.emotion).width;
-              ctx.fillRect(x, y - 25, textWidth + 10, 25);
+              ctx.fillRect(mirroredX, y - 25, textWidth + 10, 25);
 
               // Draw Label Text
               ctx.fillStyle = '#000000'; // Black text
               ctx.font = 'bold 16px Arial';
-              ctx.fillText(det.emotion, x + 5, y - 7);
+              // Text is drawn normally at the mirrored position
+              ctx.fillText(det.emotion, mirroredX + 5, y - 7);
             }
           });
         }
@@ -112,11 +119,8 @@ const MediaCapture = ({ sessionId, type }) => {
             videoConstraints={{ facingMode: "user" }}
             onUserMediaError={(err) => console.error("Webcam Error:", err)}
           />
-          {/* Canvas also mirrored to match video if video is mirrored? 
-              Note: If video is mirrored via CSS, canvas MUST also be mirrored unless coordinates are flipped.
-              Let's match the video transform.
-          */}
-          <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full pointer-events-none transform scale-x-[-1]" />
+          {/* Canvas NOT mirrored via CSS to keep text readable. We calculate mirror X coordinates manually. */}
+          <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full pointer-events-none" />
         </>
       )}
 

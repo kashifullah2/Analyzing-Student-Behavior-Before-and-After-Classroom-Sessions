@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { Target, Layers, Zap } from 'lucide-react';
-import { API_URL } from '../config';
+// Remove API_URL import since we use api.js
 
 const Analytics = ({ sessionId }) => {
   const [data, setData] = useState(null);
@@ -13,21 +13,28 @@ const Analytics = ({ sessionId }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let interval;
     const fetchData = async () => {
       try {
-        const res = await axios.get(`${API_URL}/sessions/${sessionId}/report`);
+        const res = await api.get(`/sessions/${sessionId}/report`);
         setData(res.data);
         setError(null);
         setLoading(false);
       } catch (err) {
-        console.error('Analytics fetch error:', err);
-        setError(err.message);
+        if (err.response && err.response.status === 404) {
+          console.warn("Session not found (404), stopping analytics poll.");
+          setError("Session not found. Please create a new session.");
+          clearInterval(interval);
+        } else {
+          console.error('Analytics fetch error:', err);
+          setError(err.message);
+        }
         setLoading(false);
       }
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [sessionId]);
 
