@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["python312", "ffmpeg", "glib", "libGL", "libXext", "libXrender"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[phases.start]
+procfile = "Procfile"
