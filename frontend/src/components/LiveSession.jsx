@@ -59,7 +59,7 @@ const LiveSession = ({ sessionId }) => {
       </div>
 
       {/* Video Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[300px] lg:h-[500px]">
         <div className="dashboard-card p-1.5 relative bg-slate-900 border-none shadow-2xl shadow-indigo-500/10 overflow-hidden group">
           <div className="absolute top-4 left-4 z-10 bg-black/60 backdrop-blur-md text-white px-3 py-1 text-xs rounded-full font-bold border border-white/20 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div> ENTRY FEED

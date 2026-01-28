@@ -52,7 +52,7 @@ const AICoach = ({ sessionId }) => {
     setLoading(false);
   };
   return (
-    <div className="flex flex-col h-[calc(80vh-140px)] dashboard-card overflow-hidden bg-white/60 backdrop-blur-xl border border-white/50 shadow-xl">
+    <div className="flex flex-col h-[calc(100vh-180px)] lg:h-[calc(80vh-140px)] dashboard-card overflow-hidden bg-white/60 backdrop-blur-xl border border-white/50 shadow-xl">
 
       {/* Header */}
       <div className="bg-white/50 backdrop-blur-md border-b border-white/50 p-5 flex items-center justify-between z-10">
@@ -71,7 +71,7 @@ const AICoach = ({ sessionId }) => {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scroll bg-slate-50/50">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 sm:space-y-8 custom-scroll bg-slate-50/50">
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-5 ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-enter`}>
 
@@ -79,7 +79,7 @@ const AICoach = ({ sessionId }) => {
               {m.role === 'user' ? <User size={18} className="text-slate-600" /> : <Sparkles size={18} className="text-white" />}
             </div>
 
-            <div className={`max-w-[75%] p-6 rounded-3xl text-sm leading-relaxed shadow-sm ${m.role === 'user'
+            <div className={`max-w-[85%] sm:max-w-[75%] p-4 sm:p-6 rounded-3xl text-sm leading-relaxed shadow-sm ${m.role === 'user'
               ? 'bg-white border border-slate-200 text-slate-700 rounded-tr-none'
               : 'bg-white/80 border border-white/50 backdrop-blur-md text-slate-800 rounded-tl-none shadow-indigo-500/5'
               }`}>

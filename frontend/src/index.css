@@ -1,72 +1,61 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* =======================
-   BASE
+   2026 DESIGN SYSTEM TOKENS
 ======================= */
+:root {
+  /* Core Palette - Minimal & Sophisticated */
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-subtle: #e2e8f0;
+
+  /* Depth & Elevation */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Radius */
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
 @layer base {
   body {
     font-family: 'Inter', sans-serif;
-    @apply bg-slate-50 text-slate-800 antialiased min-h-screen overflow-x-hidden;
+    @apply bg-slate-50 text-slate-900 antialiased min-h-screen selection:bg-indigo-100 selection:text-indigo-900;
+
+    /* Modern Technical Background */
     background-image:
-      radial-gradient(60rem 60rem at top left, rgba(99, 102, 241, 0.06), transparent 60%),
-      radial-gradient(50rem 50rem at bottom right, rgba(139, 92, 246, 0.06), transparent 60%);
+      radial-gradient(#e2e8f0 1px, transparent 1px),
+      radial-gradient(#e2e8f0 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: 0 0, 16px 16px;
     background-attachment: fixed;
   }
 }
 
-/* =======================
-   AMBIENT BLOBS (SUBTLE)
-======================= */
-.bg-blobs::before,
-.bg-blobs::after {
-  content: '';
-  position: fixed;
-  border-radius: 9999px;
-  filter: blur(90px);
-  opacity: 0.45;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.bg-blobs::before {
-  top: -25%;
-  right: -15%;
-  width: 700px;
-  height: 700px;
-  background: rgba(99, 102, 241, 0.18);
-}
-
-.bg-blobs::after {
-  bottom: -25%;
-  left: -15%;
-  width: 550px;
-  height: 550px;
-  background: rgba(139, 92, 246, 0.18);
-}
-
-/* =======================
-   COMPONENTS
-======================= */
 @layer components {
 
-  /* Glass Card */
-  .dashboard-card {
-    @apply bg-white/70 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-sm transition-all duration-300;
+  /* Premium Containers */
+  .card-premium {
+    @apply bg-white border border-slate-200 rounded-2xl shadow-sm transition-all duration-300;
   }
 
-  .dashboard-card:hover {
-    @apply shadow-xl shadow-indigo-500/10 -translate-y-1 border-indigo-500/30;
+  .card-premium:hover {
+    @apply shadow-md border-slate-300 -translate-y-0.5;
   }
 
-  /* Panels */
-  .glass-panel {
-    @apply bg-white/60 backdrop-blur-lg border border-slate-200/50 rounded-xl;
+  /* Typography System */
+  .heading-display {
+    font-family: 'Outfit', sans-serif;
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 leading-[1.1];
   }
 
-  /* =======================
-     TYPOGRAPHY
-  ======================= */
   .heading-xl {
     font-family: 'Outfit', sans-serif;
     @apply text-3xl font-semibold tracking-tight text-slate-900;
@@ -74,56 +63,50 @@
 
   .heading-lg {
     font-family: 'Outfit', sans-serif;
-    @apply text-xl font-medium text-slate-900;
+    @apply text-xl font-semibold text-slate-900;
   }
 
-  .text-muted {
-    @apply text-sm text-slate-500 font-medium;
-  }
-
-  /* =======================
-     INPUTS
-  ======================= */
+  /* 2026 Inputs - High Polish */
   .input-field {
-    @apply w-full rounded-xl px-4 py-3 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all;
+    @apply w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all duration-200;
   }
 
-  /* =======================
-     BUTTONS
-  ======================= */
+  /* Buttons - Crisp & Interactive */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold tracking-wide shadow-md shadow-indigo-600/30 transition-all active:scale-95;
-  }
-
-  .btn-primary:hover {
-    @apply from-indigo-700 to-violet-700 shadow-lg shadow-indigo-600/40;
+    @apply inline-flex items-center justify-center gap-2 h-12 px-8 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm shadow-indigo-200 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all duration-200;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-semibold hover:text-indigo-600 hover:border-indigo-300 hover:shadow transition-all;
+    @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-100 hover:text-slate-900 transition-all duration-200;
   }
 
-  /* Accent */
-  .accent-text {
-    @apply text-indigo-600 font-semibold;
+  /* Status Badges */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
   }
 
-  /* =======================
-     ANIMATIONS
-  ======================= */
+  .badge-indigo {
+    @apply bg-indigo-50 text-indigo-700 border border-indigo-100;
+  }
+
+  .badge-emerald {
+    @apply bg-emerald-50 text-emerald-700 border border-emerald-100;
+  }
+
+  /* Smooth Transitions */
   .animate-enter {
-    animation: enter 0.35s ease-out both;
+    animation: enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes enter {
     from {
       opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(10px) scale(0.98);
     }
 
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
   }
 }

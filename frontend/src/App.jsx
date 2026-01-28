@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import api from './api';
-import { Sparkles, ArrowRight, Code } from 'lucide-react';
+import { Sparkles, ArrowRight, Code, Menu, GraduationCap } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
 import LiveSession from './components/LiveSession';
@@ -18,6 +18,7 @@ const MainLayout = ({ token, setToken }) => {
   const [view, setView] = useState('dashboard');
   const [loading, setLoading] = useState(false);
   const [sessionForm, setSessionForm] = useState({ name: '', class_name: '', instructor: '' });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const savedId = localStorage.getItem('activeSessionId');
@@ -66,11 +67,30 @@ const MainLayout = ({ token, setToken }) => {
 
 
   return (
-    <div className="flex min-h-screen font-sans selection:bg-indigo-100 selection:text-indigo-700 bg-blobs">
-      <Sidebar view={view} setView={setView} handleLogout={handleLogout} handleNewSession={handleNewSession} />
-      <div className="flex-1 ml-72 h-screen overflow-y-auto flex flex-col relative z-10 transition-colors duration-300">
-        <div className="p-8 flex-1">
-          <header className="flex justify-between items-center mb-8">
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar
+        view={view}
+        setView={setView}
+        handleLogout={handleLogout}
+        handleNewSession={handleNewSession}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div className="flex-1 lg:ml-72 min-h-screen flex flex-col relative">
+        {/* Mobile Header */}
+        <div className="lg:hidden h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="text-indigo-600" size={24} />
+            <span className="font-bold text-slate-900 font-[Outfit]">BehaviorAnalyzer</span>
+          </div>
+          <button onClick={() => setSidebarOpen(true)} className="p-2 text-slate-600">
+            <Menu size={24} />
+          </button>
+        </div>
+
+        <div className="p-4 sm:p-6 lg:p-8 flex-1 w-full max-w-7xl mx-auto">
+          <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
             <div>
               <h2 className="text-2xl font-bold text-slate-900">
                 {view === 'dashboard' && 'Dashboard Overview'}
@@ -79,7 +99,7 @@ const MainLayout = ({ token, setToken }) => {
                 {view === 'assistant' && 'AI Assistant'}
                 {view === 'history' && 'Session Archives'}
               </h2>
-              <p className="text-slate-500 text-sm">Analyzing Student Behavior Before and After Classroom Sessions</p>
+              <p className="text-slate-500 text-sm">Empowering educators with real-time insights</p>
             </div>
           </header>
 

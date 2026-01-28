@@ -52,8 +52,8 @@ const SessionHistory = ({ onRestore }) => {
       </div>
 
       {/* History Table */}
-      <div className="dashboard-card overflow-hidden">
-        <table className="w-full text-left border-collapse">
+      <div className="dashboard-card overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[600px]">
           <thead className="bg-slate-50/50 border-b border-slate-100">
             <tr>
               <th className="p-5 text-xs font-bold text-slate-500 uppercase tracking-wider">Class Details</th>
