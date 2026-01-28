@@ -5,24 +5,19 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from pydantic import BaseModel
 
-# 1. Load environment variables
 load_dotenv()
 
-# 2. Define the Request Model (Used by main.py)
 class ChatRequest(BaseModel):
     question: str
 
-# 3. Setup Groq API
 api_key = os.getenv("GROQ_API_KEY")
 
 if api_key:
-    # Initialize the LLM
-    llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0.7, api_key=api_key, max_tokens=100)
+    llm = ChatGroq(model="qwen/qwen3-32b", temperature=0.7, api_key=api_key, max_tokens=100)
 else:
     llm = None
     print("⚠ Warning: GROQ_API_KEY not found in .env file")
 
-# 4. The Function main.py is looking for
 def ask_teaching_assistant(question, session_stats):
     """
     Generates advice based on the specific classroom data provided.
@@ -30,8 +25,6 @@ def ask_teaching_assistant(question, session_stats):
     if not llm:
         return "AI Service is currently unavailable. Please check your API Key configuration."
 
-    # Create a summary context of the session
-    # We use safe .get() calls to avoid crashes if data is missing
     context_text = f"""
     CLASSROOM DATA CONTEXT:
     - Session Name: {session_stats.get('info', {}).get('class_name', 'Unknown')}

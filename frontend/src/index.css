@@ -1,63 +1,129 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
+/* =======================
+   BASE
+======================= */
 @layer base {
   body {
     font-family: 'Inter', sans-serif;
-    @apply bg-slate-50 text-slate-800 overflow-x-hidden;
+    @apply bg-slate-50 text-slate-800 antialiased min-h-screen overflow-x-hidden;
+    background-image:
+      radial-gradient(60rem 60rem at top left, rgba(99, 102, 241, 0.06), transparent 60%),
+      radial-gradient(50rem 50rem at bottom right, rgba(139, 92, 246, 0.06), transparent 60%);
+    background-attachment: fixed;
   }
 }
 
+/* =======================
+   AMBIENT BLOBS (SUBTLE)
+======================= */
+.bg-blobs::before,
+.bg-blobs::after {
+  content: '';
+  position: fixed;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.45;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.bg-blobs::before {
+  top: -25%;
+  right: -15%;
+  width: 700px;
+  height: 700px;
+  background: rgba(99, 102, 241, 0.18);
+}
+
+.bg-blobs::after {
+  bottom: -25%;
+  left: -15%;
+  width: 550px;
+  height: 550px;
+  background: rgba(139, 92, 246, 0.18);
+}
+
+/* =======================
+   COMPONENTS
+======================= */
 @layer components {
-  /* THEME: HORIZON LIGHT */
-  
-  /* Main Card Logic */
+
+  /* Glass Card */
   .dashboard-card {
-    @apply bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-200;
+    @apply bg-white/70 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-sm transition-all duration-300;
   }
-  
+
   .dashboard-card:hover {
-    @apply border-indigo-200 shadow-md shadow-indigo-100;
+    @apply shadow-xl shadow-indigo-500/10 -translate-y-1 border-indigo-500/30;
   }
 
-  /* Typography */
+  /* Panels */
+  .glass-panel {
+    @apply bg-white/60 backdrop-blur-lg border border-slate-200/50 rounded-xl;
+  }
+
+  /* =======================
+     TYPOGRAPHY
+  ======================= */
   .heading-xl {
-    @apply text-2xl font-bold text-slate-900 tracking-tight;
+    font-family: 'Outfit', sans-serif;
+    @apply text-3xl font-semibold tracking-tight text-slate-900;
   }
+
   .heading-lg {
-    @apply text-lg font-semibold text-slate-900;
+    font-family: 'Outfit', sans-serif;
+    @apply text-xl font-medium text-slate-900;
   }
+
   .text-muted {
-    @apply text-slate-500 text-sm;
+    @apply text-sm text-slate-500 font-medium;
   }
 
-  /* Inputs & Buttons */
+  /* =======================
+     INPUTS
+  ======================= */
   .input-field {
-    @apply w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400;
+    @apply w-full rounded-xl px-4 py-3 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all;
   }
 
+  /* =======================
+     BUTTONS
+  ======================= */
   .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-2;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold tracking-wide shadow-md shadow-indigo-600/30 transition-all active:scale-95;
+  }
+
+  .btn-primary:hover {
+    @apply from-indigo-700 to-violet-700 shadow-lg shadow-indigo-600/40;
   }
 
   .btn-ghost {
-    @apply bg-white hover:bg-slate-50 text-slate-600 hover:text-indigo-600 border border-slate-200 py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-semibold hover:text-indigo-600 hover:border-indigo-300 hover:shadow transition-all;
   }
 
-  /* Utilities */
+  /* Accent */
   .accent-text {
-    @apply text-indigo-600 font-medium;
+    @apply text-indigo-600 font-semibold;
   }
-  
-  /* Custom Scrollbar */
-  .custom-scroll::-webkit-scrollbar {
-    width: 6px;
+
+  /* =======================
+     ANIMATIONS
+  ======================= */
+  .animate-enter {
+    animation: enter 0.35s ease-out both;
   }
-  .custom-scroll::-webkit-scrollbar-track {
-    background: #f1f5f9; 
-  }
-  .custom-scroll::-webkit-scrollbar-thumb {
-    background: #cbd5e1; 
-    border-radius: 3px;
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

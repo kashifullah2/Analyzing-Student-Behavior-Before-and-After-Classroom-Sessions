@@ -1,27 +1,35 @@
 import cv2
 import numpy as np
 import os
+import tempfile
 from tensorflow.keras.models import load_model
 from collections import Counter
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import psutil
 
-sessions = {}
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "face_model.h5")
 EMOTIONS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 
-# Load Model with Error Handling
-try:
-    if os.path.exists(MODEL_PATH):
-        model = load_model(MODEL_PATH)
-        print("✓ AI Model Loaded Successfully")
-    else:
-        model = None
-        print(f"⚠ Model not found at {MODEL_PATH}. Running in Simulation Mode.")
-except Exception as e:
-    model = None
-    print(f"⚠ Error loading model: {e}")
+_model = None
+
+def get_model():
+    global _model
+    if _model is not None:
+        return _model
+    
+    try:
+        if os.path.exists(MODEL_PATH):
+            _model = load_model(MODEL_PATH)
+            print("✓ AI Model Loaded Successfully")
+        else:
+            _model = None
+            print(f"⚠ Model not found at {MODEL_PATH}. Running in Simulation Mode.")
+    except Exception as e:
+        _model = None
+        print(f"⚠ Error loading model: {e}")
+    
+    return _model
 
 def analyze_cv2_image(img):
     if img is None: return []
@@ -30,20 +38,21 @@ def analyze_cv2_image(img):
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
     
     results = []
+    model_instance = get_model()
     for (x, y, w, h) in faces:
-        if model:
+        if model_instance:
             roi_gray = gray[y:y+h, x:x+w]
             roi_resized = cv2.resize(roi_gray, (48, 48))
             img_pixels = np.expand_dims(roi_resized, axis=0)
             img_pixels = np.expand_dims(img_pixels, axis=-1)
-            pred = model.predict(img_pixels, verbose=0)[0]
+            pred = model_instance.predict(img_pixels, verbose=0)[0]
             emotion = EMOTIONS[np.argmax(pred)]
         else:
             emotion = "Neutral" # Fallback if no model
             
         results.append({
             "emotion": emotion,
-            "bbox": [int(x), int(y), int(w), int(h)]
+            "bbox": str([int(x), int(y), int(w), int(h)]) # Store as string for DB
         })
     return results
 
@@ -53,15 +62,47 @@ def detect_emotion_from_frame(image_bytes):
     return analyze_cv2_image(img)
 
 def process_video_file(video_bytes):
-    # Simplified video processor for demo purposes
-    # In production, save to temp file and read with cv2.VideoCapture
-    return [] 
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tfile:
+        tfile.write(video_bytes)
+        temp_filename = tfile.name
+    
+    cap = cv2.VideoCapture(temp_filename)
+    results = []
+    frame_rate = cap.get(cv2.CAP_PROP_FPS) or 30
+    frame_interval = int(frame_rate) # Analyze 1 frame per second
+    
+    count = 0
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret: break
+        
+        if count % frame_interval == 0:
+            frame_results = analyze_cv2_image(frame)
+            for res in frame_results:
+                 # Add implicit timestamp offset based on frame count? 
+                 # For now just collecting emotions is enough for stats
+                results.append(res)
+        count += 1
+        
+    cap.release()
+    os.unlink(temp_filename)
+    return results
 
 def calculate_advanced_stats(data_points):
     if not data_points:
         return {"total_faces": 0, "counts": {e: 0 for e in EMOTIONS}, "confusion_index": 0, "boredom_meter": 0, "vibe_score": 0, "attendance_est": 0, "at_risk_index": 0}
     
-    emotions = [d['emotion'] for d in data_points]
+    # Handle both dicts and SQLAlchemy objects
+    emotions = []
+    timestamps = []
+    for d in data_points:
+        if isinstance(d, dict):
+            emotions.append(d.get('emotion'))
+            timestamps.append(d.get('timestamp'))
+        else:
+            emotions.append(d.emotion)
+            timestamps.append(d.timestamp)
+
     counts = Counter(emotions)
     total = len(emotions)
     safe_counts = {e: counts.get(e, 0) for e in EMOTIONS}
@@ -77,8 +118,9 @@ def calculate_advanced_stats(data_points):
     risk = ((safe_counts['Sad'] + safe_counts['Angry'] + safe_counts['Fear']) / total) * 100
 
     # FIX: Attendance is Max faces seen in a single timestamp frame
-    timestamps = [d.get('timestamp') for d in data_points]
-    attendance = max(Counter(timestamps).values()) if timestamps else 0
+    # timestamps might be None or ISO strings
+    valid_timestamps = [t for t in timestamps if t]
+    attendance = max(Counter(valid_timestamps).values()) if valid_timestamps else 0
 
     return {
         "total_faces": total, 
@@ -93,19 +135,48 @@ def calculate_advanced_stats(data_points):
 def get_system_health():
     return {"cpu_usage": psutil.cpu_percent(), "ram_usage": psutil.virtual_memory().percent}
 
-def generate_pdf(session_id):
-    if session_id not in sessions: return None
-    filename = f"/tmp/report_{session_id}.pdf" # Use /tmp for cloud writers
+def generate_pdf(session_info, entry_stats, exit_stats):
+    # session_info: dict with class_name, instructor etc. (or object converted to dict)
+    # stats: calculated stats
+    
+    # Assuming session_id is available in info, or passed separately? 
+    # Let's just create a unique filename
+    import uuid
+    filename = f"/tmp/report_{uuid.uuid4()}.pdf"
     c = canvas.Canvas(filename, pagesize=letter)
-    data = sessions[session_id]
-    stats = calculate_advanced_stats(data['entry_data'] + data['exit_data'])
+    
+    # Combine stats for general report or show both?
+    # Original showed "vibe_score" which implies aggregated logic?
+    # Let's show Entry vs Exit stats
     
     c.setFont("Helvetica-Bold", 16)
     c.drawString(50, 750, "Analyzing Student Behavior Report")
+    
     c.setFont("Helvetica", 12)
-    c.drawString(50, 730, f"Class: {data['info']['class_name']}")
-    c.drawString(50, 715, f"Instructor: {data['info']['instructor']}")
-    c.drawString(50, 700, f"Vibe Score: {stats['vibe_score']}/10")
-    c.drawString(50, 685, f"Attendance: {stats['attendance_est']}")
+    c.drawString(50, 720, f"Class: {session_info.get('class_name', 'N/A')}")
+    c.drawString(50, 705, f"Instructor: {session_info.get('instructor', 'N/A')}")
+    
+    y = 680
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, y, "Entry Analysis")
+    c.setFont("Helvetica", 12)
+    y -= 20
+    c.drawString(50, y, f"Vibe Score: {entry_stats['vibe_score']}/10")
+    y -= 15
+    c.drawString(50, y, f"Attendance Est: {entry_stats['attendance_est']}")
+    y -= 15
+    c.drawString(50, y, f"Confusion Index: {entry_stats['confusion_index']}%")
+    
+    y -= 40
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, y, "Exit Analysis")
+    c.setFont("Helvetica", 12)
+    y -= 20
+    c.drawString(50, y, f"Vibe Score: {exit_stats['vibe_score']}/10")
+    y -= 15
+    c.drawString(50, y, f"Attendance Est: {exit_stats['attendance_est']}")
+    y -= 15
+    c.drawString(50, y, f"Confusion Index: {exit_stats['confusion_index']}%")
+
     c.save()
     return filename

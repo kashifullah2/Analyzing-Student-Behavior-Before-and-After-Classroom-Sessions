@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, 
-  PieChart, Pie, Cell 
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell
 } from 'recharts';
 import { LogIn, LogOut, Smile, MinusCircle, TrendingUp, Activity, Download } from 'lucide-react';
 
@@ -16,7 +16,7 @@ const Dashboard = ({ sessionId }) => {
       try {
         const res = await axios.get(`http://localhost:8000/sessions/${sessionId}/report`);
         setData(res.data);
-      } catch (err) {}
+      } catch (err) { }
     };
     const interval = setInterval(fetchData, 2000);
     return () => clearInterval(interval);
@@ -30,37 +30,37 @@ const Dashboard = ({ sessionId }) => {
 
   const { entry_stats, exit_stats } = data;
   const emotionKeys = ['Happy', 'Sad', 'Neutral', 'Angry', 'Surprise'];
-  
+
   const comparisonData = emotionKeys.map(key => ({
     name: key,
     Entry: entry_stats.counts[key] || 0,
     Exit: exit_stats.counts[key] || 0,
   }));
-  
+
   const pieData = emotionKeys.map(key => ({
     name: key,
     value: exit_stats.counts[key] || 0
   })).filter(d => d.value > 0);
 
   const MetricCard = ({ title, value, icon: Icon, colorClass, bgClass }) => (
-    <div className="dashboard-card p-5 flex items-start justify-between">
+    <div className="dashboard-card p-6 flex items-center justify-between group">
       <div>
-        <p className="text-muted text-xs uppercase font-bold tracking-wider">{title}</p>
-        <h3 className="text-3xl font-bold text-slate-900 mt-2">{value}</h3>
+        <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-1">{title}</p>
+        <h3 className="heading-xl">{value}</h3>
       </div>
-      <div className={`p-3 rounded-lg ${bgClass} ${colorClass}`}>
-        <Icon size={24} />
+      <div className={`p-4 rounded-2xl ${bgClass} ${colorClass} group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+        <Icon size={28} />
       </div>
     </div>
   );
 
   return (
     <div className="space-y-6 pb-10 animate-fade-in-up">
-      
+
       <div className="flex justify-end">
-          <button onClick={handleExportPDF} className="btn-ghost text-xs">
-             <Download size={14} /> Download PDF Report
-          </button>
+        <button onClick={handleExportPDF} className="btn-ghost text-xs">
+          <Download size={14} /> Download PDF Report
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -71,7 +71,7 @@ const Dashboard = ({ sessionId }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Bar Chart */}
         <div className="dashboard-card p-6">
           <div className="flex items-center gap-2 mb-6">
@@ -83,7 +83,7 @@ const Dashboard = ({ sessionId }) => {
               <BarChart data={comparisonData}>
                 <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#0f172a', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   cursor={{ fill: '#f1f5f9' }}
                 />
@@ -97,23 +97,23 @@ const Dashboard = ({ sessionId }) => {
 
         {/* Pie Chart */}
         <div className="dashboard-card p-6">
-           <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-6">
             <Activity className="text-pink-600" size={20} />
             <h3 className="font-bold text-slate-900 text-lg">Final Emotion Split</h3>
           </div>
-           <div className="h-72 flex justify-center">
-             <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                    <Pie data={pieData} innerRadius={80} outerRadius={100} paddingAngle={5} dataKey="value">
-                        {pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#0f172a' }} />
-                    <Legend iconType="circle" />
-                </PieChart>
-             </ResponsiveContainer>
-           </div>
+          <div className="h-72 flex justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pieData} innerRadius={80} outerRadius={100} paddingAngle={5} dataKey="value">
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#0f172a' }} />
+                <Legend iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>
