@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Calendar, Users, Zap, Search, FileText, ArrowUpRight } from 'lucide-react';
 
 const SessionHistory = ({ onRestore }) => {
@@ -13,7 +13,7 @@ const SessionHistory = ({ onRestore }) => {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/sessions/history');
+      const res = await api.get('/sessions/history');
       setHistory(res.data);
     } catch (err) {
       console.error("Failed to fetch history");

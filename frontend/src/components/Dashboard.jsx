@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -8,22 +8,27 @@ import { LogIn, LogOut, Smile, MinusCircle, TrendingUp, Activity, Download } fro
 
 const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6'];
 
-const Dashboard = ({ sessionId }) => {
+const Dashboard = ({ sessionId, onSessionInvalid }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/sessions/${sessionId}/report`);
+        const res = await api.get(`/sessions/${sessionId}/report`);
         setData(res.data);
-      } catch (err) { }
+      } catch (err) {
+        if (err.response && err.response.status === 404 && onSessionInvalid) {
+          onSessionInvalid();
+        }
+      }
     };
     const interval = setInterval(fetchData, 2000);
     return () => clearInterval(interval);
   }, [sessionId]);
 
   const handleExportPDF = () => {
-    window.open(`http://localhost:8000/sessions/${sessionId}/export_pdf`, '_blank');
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    window.open(`${baseUrl}/sessions/${sessionId}/export_pdf`, '_blank');
   };
 
   if (!data) return <div className="p-10 text-center text-muted">Loading Data Stream...</div>;

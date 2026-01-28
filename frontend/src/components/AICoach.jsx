@@ -52,7 +52,7 @@ const AICoach = ({ sessionId }) => {
     setLoading(false);
   };
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] dashboard-card overflow-hidden bg-white/60 backdrop-blur-xl border border-white/50 shadow-xl">
+    <div className="flex flex-col h-[calc(80vh-140px)] dashboard-card overflow-hidden bg-white/60 backdrop-blur-xl border border-white/50 shadow-xl">
 
       {/* Header */}
       <div className="bg-white/50 backdrop-blur-md border-b border-white/50 p-5 flex items-center justify-between z-10">

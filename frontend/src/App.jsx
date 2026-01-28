@@ -57,6 +57,12 @@ const MainLayout = ({ token, setToken }) => {
     setView('dashboard');
   };
 
+  const handleSessionInvalid = () => {
+    localStorage.removeItem('activeSessionId');
+    setActiveSession(null);
+    setView('dashboard');
+  };
+
 
 
   return (
@@ -97,7 +103,7 @@ const MainLayout = ({ token, setToken }) => {
               </div>
             )) : (
             <div className="animate-fade-in-up">
-              {view === 'dashboard' && <Dashboard sessionId={activeSession.id} />}
+              {view === 'dashboard' && <Dashboard sessionId={activeSession.id} onSessionInvalid={handleSessionInvalid} />}
               {view === 'session' && <LiveSession sessionId={activeSession.id} />}
               {view === 'analytics' && <Analytics sessionId={activeSession.id} />}
               {view === 'assistant' && <AICoach sessionId={activeSession.id} />}
