@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock, User, Mail, Phone, MapPin, ArrowRight,
@@ -77,7 +77,7 @@ export const Login = ({ setToken }) => {
     setStatus({ type: '', msg: '' });
 
     try {
-      const res = await axios.post('http://localhost:8000/login', { username, password });
+      const res = await api.post('/login', { username, password });
       setToken(res.data.access_token);
       localStorage.setItem('token', res.data.access_token);
       navigate('/dashboard');
@@ -157,7 +157,7 @@ export const Signup = () => {
 
     // 2. API Call
     try {
-      await axios.post('http://localhost:8000/signup', formData);
+      await api.post('/signup', formData);
 
       // 3. Success Feedback
       setStatus({ type: 'success', msg: "Account created successfully! Redirecting..." });
