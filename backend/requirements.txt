@@ -7,7 +7,8 @@ python-multipart
 python-jose[cryptography]
 passlib
 bcrypt==4.0.1
-tensorflow-cpu
+hsemotion-onnx
+onnxruntime
 opencv-python-headless
 reportlab
 langchain-groq

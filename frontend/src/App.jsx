@@ -12,6 +12,7 @@ import SessionHistory from './components/SessionHistory';
 import Footer from './components/Footer';
 import { PlaceholderPage } from './components/Placeholders';
 import { Login, Signup } from './components/Auth';
+import VideoAnalyzer from './components/VideoAnalyzer';
 
 const MainLayout = ({ token, setToken }) => {
   const [activeSession, setActiveSession] = useState(null);

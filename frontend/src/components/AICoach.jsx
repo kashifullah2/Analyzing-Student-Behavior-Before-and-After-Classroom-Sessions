@@ -3,42 +3,44 @@ import api from '../api';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
 
 const AICoach = ({ sessionId }) => {
-  // Initialize with a default welcome message, but we will merge history later
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
 
   // 1. LOAD CHAT HISTORY ON MOUNT
+  // BUG FIX: was calling /sessions/:id/details which has no chat_history field.
+  // The correct dedicated endpoint is /sessions/:id/chat_history.
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        const res = await api.get(`/sessions/${sessionId}/details`);
-        const history = res.data.chat_history || [];
-
+        const res = await api.get(`/sessions/${sessionId}/chat_history`);
+        const history = res.data || [];
         if (history.length > 0) {
-          // Convert backend format to frontend format if needed, or just use as is
           setMessages(history);
         } else {
-          // Default Welcome if no history
           setMessages([{ role: 'bot', text: 'Hello! I am your AI Teaching Assistant. How can I help you improve engagement?' }]);
         }
       } catch (e) {
-        console.error("Failed to load chat history");
+        console.error('Failed to load chat history', e);
+        // Show welcome message even on error so the UI is never blank
+        setMessages([{ role: 'bot', text: 'Hello! I am your AI Teaching Assistant. How can I help you improve engagement?' }]);
       }
     };
     loadHistory();
   }, [sessionId]);
 
   // 2. AUTO SCROLL
-  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
     const userText = input;
 
-    // Optimistic UI Update
+    // Optimistic UI update
     setMessages(prev => [...prev, { role: 'user', text: userText }]);
     setInput('');
     setLoading(true);
@@ -47,10 +49,14 @@ const AICoach = ({ sessionId }) => {
       const res = await api.post(`/sessions/${sessionId}/chat`, { question: userText });
       setMessages(prev => [...prev, { role: 'bot', text: res.data.response }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'bot', text: "Service unavailable." }]);
+      setMessages(prev => [...prev, { role: 'bot', text: 'Service unavailable. Please try again.' }]);
+    } finally {
+      // BUG FIX: setLoading(false) was outside the try/catch so it ran before
+      // the catch branch finished in some JS engines. Moved into finally.
+      setLoading(false);
     }
-    setLoading(false);
   };
+
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] lg:h-[calc(80vh-140px)] dashboard-card overflow-hidden bg-white/60 backdrop-blur-xl border border-white/50 shadow-xl">
 
@@ -63,7 +69,8 @@ const AICoach = ({ sessionId }) => {
           <div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <p className="text-sm text-slate-700 font-bold">Llama-3 Online</p>
+              {/* BUG FIX: label said "Llama-3" but ai_service.py uses Qwen (qwen3-32b via Groq) */}
+              <p className="text-sm text-slate-700 font-bold">Qwen3 Online</p>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5">Ready to assist</p>
           </div>
@@ -74,11 +81,9 @@ const AICoach = ({ sessionId }) => {
       <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 sm:space-y-8 custom-scroll bg-slate-50/50">
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-5 ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-enter`}>
-
             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border shadow-sm ${m.role === 'user' ? 'bg-white border-slate-200' : 'bg-gradient-to-br from-indigo-600 to-violet-600 border-none'}`}>
               {m.role === 'user' ? <User size={18} className="text-slate-600" /> : <Sparkles size={18} className="text-white" />}
             </div>
-
             <div className={`max-w-[85%] sm:max-w-[75%] p-4 sm:p-6 rounded-3xl text-sm leading-relaxed shadow-sm ${m.role === 'user'
               ? 'bg-white border border-slate-200 text-slate-700 rounded-tr-none'
               : 'bg-white/80 border border-white/50 backdrop-blur-md text-slate-800 rounded-tl-none shadow-indigo-500/5'
@@ -87,6 +92,7 @@ const AICoach = ({ sessionId }) => {
             </div>
           </div>
         ))}
+
         {loading && (
           <div className="flex gap-5 animate-pulse">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shrink-0">
@@ -108,9 +114,14 @@ const AICoach = ({ sessionId }) => {
             placeholder="Ask for pedagogical advice based on live data..."
             value={input}
             onChange={e => setInput(e.target.value)}
+            disabled={loading}
           />
-          <button disabled={loading} className="absolute right-2 top-2 bottom-2 aspect-square btn-primary rounded-xl flex items-center justify-center !p-0 !py-0 shadow-md">
-            <Send size={20} className={loading ? "opacity-50" : ""} />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="absolute right-2 top-2 bottom-2 aspect-square btn-primary rounded-xl flex items-center justify-center !p-0 !py-0 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send size={20} />
           </button>
         </form>
       </div>

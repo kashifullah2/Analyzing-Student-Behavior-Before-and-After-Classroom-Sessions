@@ -1,8 +1,9 @@
 import os
 import uuid
 import json
-from datetime import datetime
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
+import asyncio
+from datetime import datetime, timedelta
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -70,7 +71,6 @@ async def get_session_details(session_id: str, db: Session = Depends(database.ge
     session = db.query(models.Session).filter(models.Session.id == session_id).first()
     if not session: raise HTTPException(404, "Not Found")
     
-    # Check if there are any stats to display "live" or just return info
     return {"id": session.id, "name": session.name, "class_name": session.class_name, "instructor": session.instructor, "created_at": session.created_at}
 
 @app.get("/sessions/history")
@@ -105,8 +105,7 @@ async def analyze_frame(session_id: str, type: str = Form(...), file: UploadFile
             session_id=session_id,
             type=type,
             emotion=r['emotion'],
-            bbox=r['bbox'], # Already stringified in services or need to here? services returns list/dict. services.analyze_cv2_image returns bbox string? No, let's check services.py. 
-            # I updated services.py to return str(bbox).
+            bbox=r['bbox'],
             timestamp=timestamp
         )
         db.add(new_data)
@@ -121,25 +120,167 @@ async def analyze_video(session_id: str, type: str = Form(...), file: UploadFile
     
     from fastapi.concurrency import run_in_threadpool
     results = await run_in_threadpool(services.process_video_file, await file.read())
-    timestamp = datetime.now().isoformat()
-    
-    # Batch add results
-    # Ideally use bulk_insert_mappings but loop is fine for prototype scale
-    for r in results:
-        new_data = models.EmotionData(
-            session_id=session_id,
-            type=type,
-            emotion=r['emotion'],
-            bbox=r['bbox'],
-            timestamp=timestamp # All video frames get same upload timestamp or calculated offset? timestamp per frame.
-        )
-        # Note: services.process_video_file returns list of dicts.
-        # I should probably assign distinct timestamps if possible, but for stats it doesn't matter much unless we plot over time.
-        # Let's just use upload timestamp for now as "video upload time".
-        db.add(new_data)
+    base_time = datetime.now()
+    total_detections = 0
+    for idx, frame_results in enumerate(results):
+        # Assign a slightly different timestamp to each frame so attendance logic works
+        frame_ts = (base_time + timedelta(milliseconds=idx * 100)).isoformat()
+        for r in frame_results:
+            new_data = models.EmotionData(
+                session_id=session_id,
+                type=type,
+                emotion=r['emotion'],
+                bbox=r['bbox'],
+                timestamp=frame_ts
+            )
+            db.add(new_data)
+            total_detections += 1
         
     db.commit()
-    return {"status": "success", "frames_processed": len(results)}
+    return {"status": "success", "frames_processed": len(results), "total_detections": total_detections}
+
+
+@app.post("/sessions/{session_id}/analyze_video_full")
+async def analyze_video_full(session_id: str, type: str = Form(...), file: UploadFile = File(...), db: Session = Depends(database.get_db)):
+    """Processes a video fully, annotates it, saves results to DB, and returns the MP4 file."""
+    from fastapi.concurrency import run_in_threadpool
+    from starlette.background import BackgroundTask
+
+    session = db.query(models.Session).filter(models.Session.id == session_id).first()
+    if not session: raise HTTPException(404, "Not Found")
+    
+    # Process video and get file path and results
+    output_path, all_results = await run_in_threadpool(services.process_and_annotate_video, await file.read())
+    
+    if not output_path or not os.path.exists(output_path):
+        raise HTTPException(500, "Video processing failed")
+        
+    # Save the detected results into the DB so the dashboard updates and counts students
+    base_time = datetime.now()
+    for idx, frame_results in enumerate(all_results):
+        # Increment timestamp per frame so Counter(valid_ts) works correctly for attendance
+        frame_ts = (base_time + timedelta(milliseconds=idx * 100)).isoformat()
+        for res in frame_results:
+            new_data = models.EmotionData(
+                session_id=session_id,
+                type=type,
+                emotion=res['emotion'],
+                bbox=res['bbox'],
+                timestamp=frame_ts
+            )
+            db.add(new_data)
+    
+    if all_results:
+        db.commit()
+        
+    # Return the file and delete it after sending
+    return FileResponse(
+        output_path, 
+        media_type="video/mp4",
+        filename="analyzed_video.mp4",
+        background=BackgroundTask(os.unlink, output_path)
+    )
+
+
+
+
+# ─── WebSocket: Real-time Webcam Emotion Streaming ────────────────────────────────
+@app.websocket("/ws/webcam/{session_id}/{capture_type}")
+async def websocket_webcam(websocket: WebSocket, session_id: str, capture_type: str):
+    """
+    WebSocket endpoint for real-time webcam emotion detection.
+    
+    Architecture: Webcam (Python/OpenCV) → detect locally → push results via WebSocket → React displays
+    
+    The backend opens the webcam, runs face detection + emotion recognition on each frame,
+    and streams both the JPEG-encoded frame (base64) and detection results to the React client.
+    """
+    await websocket.accept()
+    print(f"[WS] Client connected — session={session_id}, type={capture_type}")
+
+    # Start webcam (async wrapper to avoid blocking)
+    await asyncio.get_event_loop().run_in_executor(None, services.webcam_manager.start)
+
+    # Get a DB session for persisting results
+    db = database.SessionLocal()
+    client_active = True
+
+    async def listen_for_stop():
+        nonlocal client_active
+        try:
+            while True:
+                msg = await websocket.receive_text()
+                if msg == "stop":
+                    print(f"[WS] Client requested stop - {capture_type}")
+                    client_active = False
+                    break
+        except WebSocketDisconnect:
+            print(f"[WS] Client disconnected normally - {capture_type}")
+            client_active = False
+        except Exception:
+            client_active = False
+
+    listener_task = asyncio.create_task(listen_for_stop())
+
+    try:
+        frame_count = 0
+        db_pending = 0  # track unsaved DB records for batched commits
+        while client_active:
+            # Capture frame and detect emotions (runs in threadpool to not block event loop)
+            frame_b64, results = await asyncio.get_event_loop().run_in_executor(
+                None, services.webcam_manager.capture_and_detect
+            )
+
+            if frame_b64 is None:
+                await asyncio.sleep(0.1)
+                continue
+
+            frame_count += 1
+
+            # Save detections to DB (batched every 10 frames to reduce I/O lag)
+            if results:
+                timestamp = datetime.now().isoformat()
+                for r in results:
+                    db.add(models.EmotionData(
+                        session_id=session_id,
+                        type=capture_type,
+                        emotion=r['emotion'],
+                        bbox=r['bbox'],
+                        timestamp=timestamp
+                    ))
+                db_pending += 1
+                if db_pending >= 10:
+                    db.commit()
+                    db_pending = 0
+
+            # Send frame + results to React client
+            await websocket.send_json({
+                "frame": frame_b64,
+                "results": results,
+                "face_count": len(results),
+                "timestamp": datetime.now().isoformat()
+            })
+
+            await asyncio.sleep(0.066)
+
+    except WebSocketDisconnect:
+        print(f"[WS] Client disconnected unexpectedly — session={session_id}, type={capture_type}")
+    except asyncio.CancelledError:
+        print(f"[WS] Task was cancelled by server! session={session_id}, type={capture_type}")
+    except Exception as e:
+        print(f"[WS] Error: {e} - type: {type(e)}")
+    finally:
+        client_active = False
+        listener_task.cancel()
+        # Flush any remaining batched DB records
+        try:
+            db.commit()
+        except Exception:
+            pass
+        services.webcam_manager.stop()
+        db.close()
+        print(f"[WS] Cleanup complete — session={session_id}, type={capture_type}")
+
 
 @app.get("/sessions/{session_id}/report")
 async def get_report(session_id: str, db: Session = Depends(database.get_db)):
@@ -177,7 +318,7 @@ async def chat_with_assistant(session_id: str, chat: ai_service.ChatRequest, db:
     
     # Save user message
     db.add(models.ChatLog(session_id=session_id, role="user", text=chat.question, timestamp=datetime.now().isoformat()))
-    db.commit() # Commit to save user message first
+    db.commit()
     
     # Get stats for context
     entry_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == session_id, models.EmotionData.type.in_(['entry', 'video'])).all()

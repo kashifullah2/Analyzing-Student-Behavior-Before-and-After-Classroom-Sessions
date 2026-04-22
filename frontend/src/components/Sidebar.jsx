@@ -1,11 +1,11 @@
 import React from 'react';
-import { LayoutGrid, Radio, BarChart3, Bot, Clock, Settings, LogOut, GraduationCap, PlusCircle, X } from 'lucide-react';
+import { LayoutGrid, Radio, BarChart3, Bot, Clock, Settings, LogOut, GraduationCap, PlusCircle, X, Video } from 'lucide-react';
 
 const Sidebar = ({ view, setView, handleLogout, handleNewSession, isOpen, onClose }) => {
 
   const menu = [
     { id: 'dashboard', label: 'Overview', icon: LayoutGrid },
-    { id: 'session', label: 'Live Monitor', icon: Radio },
+    { id: 'session', label: 'Live Monitor Analyzer', icon: Radio },
     { id: 'analytics', label: 'Deep Analytics', icon: BarChart3 },
     { id: 'assistant', label: 'AI Assistant', icon: Bot },
     { id: 'history', label: 'Session History', icon: Clock },

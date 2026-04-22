@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BehaviorAnalyzer | FYP Presentation</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles-confetti@2.12.0/tsparticles.min.js"></script>
+
+    <style>
+        :root {
+            /* Premium Dark Theme */
+            --bg-canvas: #000000;
+            --bg-frame: #0a0a0f;
+            --border-color: rgba(255, 255, 255, 0.08);
+
+            /* Gradients & Accents */
+            --primary: #6366f1;
+            /* Indigo */
+            --accent: #14b8a6;
+            /* Teal */
+            --pink: #ec4899;
+            --amber: #f59e0b;
+            --rose: #f43f5e;
+
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+
+            --grad-main: linear-gradient(135deg, var(--primary), var(--accent));
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            font-family: 'Inter', sans-serif !important;
+            overflow: hidden;
+            color: var(--text-main);
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(20, 184, 166, 0.08), transparent 25%);
+        }
+
+        .reveal {
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        /* ========================================= */
+        /* THE FIXED APP FRAME (Enforces uniformity) */
+        /* ========================================= */
+        .reveal .slides section {
+            width: 100% !important;
+            height: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .slide-frame {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            right: 40px;
+            bottom: 40px;
+            /* Exact 40px margin on all sides */
+            background: var(--bg-frame);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Subtle grid background inside the frame */
+        .slide-frame::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Uniform Header for every slide */
+        .frame-header {
+            height: 80px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            background: rgba(255, 255, 255, 0.01);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Uniform Content Area */
+        .frame-content {
+            flex: 1;
+            padding: 40px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Always vertically centers content */
+            z-index: 1;
+        }
+
+        /* ========================================= */
+        /* TYPOGRAPHY & UTILITIES                    */
+        /* ========================================= */
+        h1 {
+            font-size: 80px !important;
+            font-weight: 800 !important;
+            letter-spacing: -2px !important;
+            line-height: 1.1 !important;
+            margin-bottom: 20px !important;
+        }
+
+        h3 {
+            font-size: 32px !important;
+            font-weight: 600 !important;
+            margin-bottom: 15px !important;
+            color: #fff !important;
+        }
+
+        p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .text-gradient {
+            background: var(--grad-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        .text-sm {
+            font-size: 18px;
+        }
+
+        .text-lg {
+            font-size: 24px;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 99px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        /* ========================================= */
+        /* UI COMPONENTS                             */
+        /* ========================================= */
+        .bento-grid {
+            display: grid;
+            gap: 24px;
+            width: 100%;
+        }
+
+        .cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .cols-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .ui-card {
+            background: rgba(20, 20, 25, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ui-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .split-layout {
+            display: flex;
+            gap: 40px;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+        }
+
+        .split-layout>div {
+            flex: 1;
+        }
+
+        .stat-block {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .stat-num {
+            font-size: 64px;
+            font-weight: 800;
+            letter-spacing: -2px;
+        }
+
+        .code-block {
+            background: #0d0d12;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            color: #a5b4fc;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .list-item i {
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+
+        img {
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            max-width: 100%;
+            object-fit: cover;
+        }
+
+        /* Reveal Adjustments */
+        .reveal .controls {
+            display: none !important;
+        }
+
+        /* Hide default controls for cleaner UI */
+        .reveal .progress {
+            height: 4px !important;
+            background: transparent !important;
+        }
+
+        .reveal .progress span {
+            background: var(--grad-main) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-content" style="align-items: center; text-align: center; padding-top: 80px;">
+                        <div style="margin-bottom: 30px; display: flex; gap: 12px; justify-content: center;">
+                            <span class="badge">FYP 2025</span>
+                            <span class="badge"
+                                style="background:rgba(236,72,153,0.1); color:var(--pink); border-color:rgba(236,72,153,0.3);">BSCS</span>
+                        </div>
+
+                        <h1>Behavior<span class="text-gradient">Analyzer</span></h1>
+                        <p class="text-lg text-muted" style="max-width: 800px; margin: 20px auto 60px auto;">
+                            Analyze Student Behavior Before and After
+                            Class sessions
+                        </p>
+
+                        <div
+                            style="display: flex; gap: 60px; text-align: left; background: rgba(255,255,255,0.03); padding: 40px 60px; border-radius: 20px; border: 1px solid var(--border-color);">
+                            <div style="border-right: 1px solid var(--border-color); padding-right: 60px;">
+                                <p class="text-sm text-muted font-mono"
+                                    style="margin-bottom: 12px; text-transform: uppercase;">Team</p>
+                                <p style="font-weight: 500; font-size: 22px;">Kashif Ullah</p>
+                                <p style="font-weight: 500; font-size: 22px;">Muhammad Danish (Mashar)</p>
+                                <p style="font-weight: 500; font-size: 22px;">Haseen Ullah</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-muted font-mono"
+                                    style="margin-bottom: 12px; text-transform: uppercase;">Supervisor</p>
+                                <p style="font-weight: 500; font-size: 22px;">Dr. Asif Rahim</p>
+                                <p class="text-sm text-muted" style="margin-top: 20px;">Dept. of Computer
+                                    Science<br>AWKUM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-header">
+                        <div class="header-logo"><i data-lucide="activity" style="color:var(--primary);"></i>
+                            BehaviorAnalyzer</div>
+                        <div class="header-title"><i data-lucide="file-text"></i> Abstract & Vision</div>
+                    </div>
+                    <div class="frame-content">
+                        <div class="split-layout">
+                            <div style="font-size: 24px; line-height: 1.8; color: var(--text-muted);">
+                                <p>Right now, teachers can only guess how students feel by <strong
+                                        style="color:#fff;">watching them manually</strong>, which is
+                                    slow, limited, and often wrong.</p>
+                                <p style="margin-top: 30px;">Our project fixes this by building a <strong
+                                        class="text-gradient">smart, real-time system</strong> that
+                                    reads student emotions at the <strong>start</strong> and
+                                    <strong>end</strong> of a class, and shows exactly how the teaching affected them.
+                                </p>
+                            </div>
+                            <div>
+                                <div class="ui-card"
+                                    style="border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.05);">
+                                    <div class="icon-box" style="background: var(--primary);"><i data-lucide="zap"
+                                            style="color:#fff;"></i></div>
+                                    <h3 style="font-size: 26px !important;">The Main Idea</h3>
+                                    <p class="text-muted" style="font-size: 20px;">A before-and-after comparison tool
+                                        connected with an <strong>AI Teaching Helper (Llama-3)</strong>.
+                                        It takes classroom emotion data and turns it into helpful, real-time
+                                        tips for the teacher.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-header">
+                        <div class="header-logo"><i data-lucide="activity" style="color:var(--primary);"></i>
+                            BehaviorAnalyzer</div>
+                        <div class="header-title"><i data-lucide="alert-circle" style="color:var(--rose);"></i> Problem
+                            Statement</div>
+                    </div>
+                    <div class="frame-content">
+                        <div class="bento-grid cols-3">
+                            <div class="ui-card">
+                                <div class="icon-box"><i data-lucide="eye-off" style="color: var(--rose);"></i></div>
+                                <h3>Guesswork Problem</h3>
+                                <p class="text-muted text-sm">Teachers get tired and can make wrong guesses.
+                                    It's very hard to know how every student in the room is feeling at the same time.
+                                </p>
+                            </div>
+                            <div class="ui-card">
+                                <div class="icon-box"><i data-lucide="users" style="color: var(--amber);"></i></div>
+                                <h3>Too Many Students</h3>
+                                <p class="text-muted text-sm">Watching 50+ students while teaching a class
+                                    is just not possible. Small signs of confusion on faces go unnoticed.
+                                </p>
+                            </div>
+                            <div class="ui-card">
+                                <div class="icon-box"><i data-lucide="database-zap" style="color: var(--accent);"></i>
+                                </div>
+                                <h3>No Data Saved</h3>
+                                <p class="text-muted text-sm">Without saving data, there is no record of past classes.
+                                    Teachers can't look back and see what worked and what didn't over time.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-header">
+                        <div class="header-logo"><i data-lucide="activity" style="color:var(--primary);"></i>
+                            BehaviorAnalyzer</div>
+                        <div class="header-title"><i data-lucide="target"></i> Project Objectives</div>
+                    </div>
+                    <div class="frame-content">
+                        <div class="bento-grid cols-2">
+                            <div class="ui-card" style="border-left: 4px solid var(--primary);">
+                                <h3 style="font-size: 24px !important; display:flex; justify-content:space-between;">
+                                    Real-Time Face Reading <i data-lucide="scan-face" style="color:var(--primary);"></i>
+                                </h3>
+                                <p class="text-muted text-sm">Use face detection and a trained AI model
+                                    (CNN) to instantly detect 7 different emotions from a live camera.</p>
+                            </div>
+                            <div class="ui-card" style="border-left: 4px solid var(--accent);">
+                                <h3 style="font-size: 24px !important; display:flex; justify-content:space-between;">
+                                    Before vs. After Check <i data-lucide="arrow-right-left"
+                                        style="color:var(--accent);"></i></h3>
+                                <p class="text-muted text-sm">Measure how a class went by checking how students
+                                    felt when they came in and comparing it with how they felt when leaving.</p>
+                            </div>
+                            <div class="ui-card" style="border-left: 4px solid var(--amber);">
+                                <h3 style="font-size: 24px !important; display:flex; justify-content:space-between;">AI
+                                    Teaching Helper <i data-lucide="bot" style="color:var(--amber);"></i></h3>
+                                <p class="text-muted text-sm">Use Llama-3 with LangChain as a real-time
+                                    teaching helper that gives tips based on live classroom data.</p>
+                            </div>
+                            <div class="ui-card" style="border-left: 4px solid var(--pink);">
+                                <h3 style="font-size: 24px !important; display:flex; justify-content:space-between;">
+                                    Dashboard & Reports <i data-lucide="layout-dashboard"
+                                        style="color:var(--pink);"></i></h3>
+                                <p class="text-muted text-sm">Build a full React dashboard for live tracking,
+                                    and use ReportLab to create automatic PDF reports after each session.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-header">
+                        <div class="header-logo"><i data-lucide="activity" style="color:var(--primary);"></i>
+                            BehaviorAnalyzer</div>
+                        <div class="header-title"><i data-lucide="cpu"></i> System Architecture Flow</div>
+                    </div>
+                    <div class="frame-content" style="align-items: center;">
+                        <div
+                            style="display: flex; gap: 40px; align-items: center; width: 100%; justify-content: center; position: relative;">
+
+                            <div
+                                style="position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: var(--border-color); z-index: 0;">
+                            </div>
+
+                            <div class="ui-card"
+                                style="width: 240px; text-align: center; z-index: 1; padding: 40px 20px;">
+                                <i data-lucide="monitor"
+                                    style="width: 48px; height: 48px; margin: 0 auto 15px auto;"></i>
+                                <h3 style="font-size: 22px !important;">React UI</h3>
+                                <p class="text-muted text-sm font-mono">Client Interface</p>
+                            </div>
+
+                            <i data-lucide="chevron-right"
+                                style="z-index: 1; color: var(--text-muted); width: 40px; height: 40px;"></i>
+
+                            <div class="ui-card"
+                                style="width: 240px; text-align: center; z-index: 1; padding: 40px 20px; border-color: rgba(99,102,241,0.5);">
+                                <i data-lucide="server-cog"
+                                    style="width: 48px; height: 48px; margin: 0 auto 15px auto; color: var(--primary);"></i>
+                                <h3 style="font-size: 22px !important;">FastAPI</h3>
+                                <p class="text-muted text-sm font-mono">Core Backend</p>
+                            </div>
+
+                            <i data-lucide="chevron-right"
+                                style="z-index: 1; color: var(--text-muted); width: 40px; height: 40px;"></i>
+
+                            <div style="display: flex; flex-direction: column; gap: 20px; z-index: 1;">
+                                <div class="ui-card"
+                                    style="width: 240px; padding: 20px; display: flex; flex-direction: row; align-items: center; gap: 15px;">
+                                    <i data-lucide="scan-face" style="color: var(--accent);"></i>
+                                    <div>
+                                        <h3 style="font-size: 18px !important; margin:0 !important;">Vision CNN</h3>
+                                        <p class="text-muted text-sm">Detection</p>
+                                    </div>
+                                </div>
+                                <div class="ui-card"
+                                    style="width: 240px; padding: 20px; display: flex; flex-direction: row; align-items: center; gap: 15px;">
+                                    <i data-lucide="bot" style="color: var(--amber);"></i>
+                                    <div>
+                                        <h3 style="font-size: 18px !important; margin:0 !important;">Llama-3</h3>
+                                        <p class="text-muted text-sm">Groq API</p>
+                                    </div>
+                                </div>
+                                <div class="ui-card"
+                                    style="width: 240px; padding: 20px; display: flex; flex-direction: row; align-items: center; gap: 15px;">
+                                    <i data-lucide="database" style="color: var(--pink);"></i>
+                                    <div>
+                                        <h3 style="font-size: 18px !important; margin:0 !important;">PostgreSQL</h3>
+                                        <p class="text-muted text-sm">Storage</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-header">
+                        <div class="header-logo"><i data-lucide="activity" style="color:var(--primary);"></i>
+                            BehaviorAnalyzer</div>
+                        <div class="header-title"><i data-lucide="brain-circuit"></i> AI Model & Training</div>
+                    </div>
+                    <div class="frame-content">
+                        <div class="split-layout">
+                            <div>
+                                <h3 style="color: var(--accent) !important; margin-bottom: 20px !important;">FER2013
+                                    Dataset</h3>
+                                <div class="bento-grid cols-2" style="margin-bottom: 30px;">
+                                    <div class="ui-card" style="padding: 20px;">
+                                        <div class="stat-num">58.4K</div>
+                                        <p class="text-muted text-sm">Face Images (48x48 Grayscale)</p>
+                                    </div>
+                                    <div class="ui-card" style="padding: 20px;">
+                                        <div class="stat-num">7</div>
+                                        <p class="text-muted text-sm">Emotion Types</p>
+                                    </div>
+                                </div>
+                                <p class="text-muted text-sm"><strong>Types:</strong> Happy, Sad, Angry, Fear,
+                                    Surprise, Neutral, Disgust <em>(Some have more data than others)</em>.</p>
+                            </div>
+                            <div>
+                                <h3 style="color: var(--primary) !important; margin-bottom: 20px !important;">Our CNN
+                                    Model Layers</h3>
+                                <div class="code-block" style="margin-bottom: 20px;">
+                                    1. Input Layer (48x48x1)<br>
+                                    2. Conv2D (64) + BatchNorm + MaxPool<br>
+                                    3. Conv2D (128) + Dropout(0.25)<br>
+                                    4. Conv2D (512) x 2<br>
+                                    5. Dense(256) → Dense(512)<br>
+                                    6. Output (7) + Softmax
+                                </div>
+                                <div style="display: flex; gap: 20px; align-items: center;">
+                                    <div class="badge"
+                                        style="font-size: 24px; padding: 10px 20px; background: rgba(16,185,129,0.1); color: #10b981; border-color: #10b981;">
+                                        Accuracy: 97.83%
+                                    </div>
+                                    <p class="text-muted text-sm">Trained using Adam optimizer (lr=0.001)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-header">
+                        <div class="header-logo"><i data-lucide="activity" style="color:var(--primary);"></i>
+                            BehaviorAnalyzer</div>
+                        <div class="header-title"><i data-lucide="bar-chart-3"></i> Our Custom Scores</div>
+                    </div>
+                    <div class="frame-content">
+                        <div class="bento-grid cols-3">
+                            <div class="ui-card">
+                                <div class="icon-box" style="background: rgba(245,158,11,0.1);"><i data-lucide="zap"
+                                        style="color: var(--amber);"></i></div>
+                                <h3>Vibe Score (1-10)</h3>
+                                <p class="text-muted text-sm" style="margin-bottom: 20px;">A simple number showing
+                                    the overall mood of the classroom — are students happy or not?</p>
+                                <div class="code-block" style="padding: 15px; font-size: 14px; background: #000;">vibe =
+                                    5 + ((pos - neg)/tot)*5</div>
+                            </div>
+                            <div class="ui-card">
+                                <div class="icon-box" style="background: rgba(20,184,166,0.1);"><i
+                                        data-lucide="cloud-lightning" style="color: var(--accent);"></i></div>
+                                <h3>Confusion Level</h3>
+                                <p class="text-muted text-sm" style="margin-bottom: 20px;">How many students look
+                                    surprised or scared. When it's high, the AI steps in to help.</p>
+                                <div class="code-block" style="padding: 15px; font-size: 14px; background: #000;">conf =
+                                    (surp+fear)/tot * 100</div>
+                            </div>
+                            <div class="ui-card">
+                                <div class="icon-box" style="background: rgba(236,72,153,0.1);"><i data-lucide="coffee"
+                                        style="color: var(--pink);"></i></div>
+                                <h3>Boredom Meter</h3>
+                                <p class="text-muted text-sm" style="margin-bottom: 20px;">Counts how many students
+                                    look blank or bored. Tells the teacher it's time to switch things up.</p>
+                                <div class="code-block" style="padding: 15px; font-size: 14px; background: #000;">bore =
+                                    neu/tot * 100</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-header">
+                        <div class="header-logo"><i data-lucide="activity" style="color:var(--primary);"></i>
+                            BehaviorAnalyzer</div>
+                        <div class="header-title"><i data-lucide="bot" style="color:var(--amber);"></i> The AI
+                            Pedagogical Coach</div>
+                    </div>
+                    <div class="frame-content">
+                        <div class="split-layout">
+                            <div>
+                                <p class="text-lg" style="margin-bottom: 20px;">Built with <strong>Llama-3</strong> and
+                                    <strong>LangChain</strong>.
+                                </p>
+                                <p class="text-muted" style="margin-bottom: 30px;">This is not a normal chatbot. The
+                                    system automatically adds <strong class="text-gradient">live class
+                                        data</strong> to every question the teacher asks, so the AI always knows
+                                    what's happening in the room.</p>
+
+                                <div class="list-item">
+                                    <i data-lucide="check-circle-2" style="color: var(--accent);"></i>
+                                    <div><strong>Knows the Room:</strong> Always aware of how the class is feeling
+                                        right now.</div>
+                                </div>
+                                <div class="list-item">
+                                    <i data-lucide="check-circle-2" style="color: var(--accent);"></i>
+                                    <div><strong>Gives Real Tips:</strong> Tells the teacher what to do next (e.g.,
+                                        "Use a simple example", "Take a short break").</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="ui-card"
+                                    style="border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.02);">
+                                    <div
+                                        style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+                                        <span class="badge"
+                                            style="background: rgba(245,158,11,0.1); color: var(--amber); border-color: var(--amber); margin:0;">System
+                                            Context Injected</span>
+                                        <span class="text-muted font-mono">Conf: 35% | Bore: 28%</span>
+                                    </div>
+                                    <p style="margin-bottom: 15px;"><strong>Teacher:</strong> "Students seem lost,
+                                        what should I do?"</p>
+                                    <div
+                                        style="background: rgba(245,158,11,0.05); padding: 20px; border-radius: 12px; border-left: 3px solid var(--amber);">
+                                        <p style="color: var(--amber); font-weight: 500;"><strong>Coach:</strong>
+                                            "35% of students look confused. Stop and ask them what part is unclear.
+                                            Then try using a simple real-life example
+                                            to explain the last topic again."</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-header">
+                        <div class="header-logo"><i data-lucide="activity" style="color:var(--primary);"></i>
+                            BehaviorAnalyzer</div>
+                        <div class="header-title"><i data-lucide="layout"></i> Interface Showcase</div>
+                    </div>
+                    <div class="frame-content">
+                        <div class="split-layout">
+                            <div class="ui-card" style="padding: 15px;">
+                                <img src="dashboard_ui.png" style="height: 400px; width: 100%;"
+                                    alt="Dashboard UI Fallback">
+                                <p class="text-center text-muted text-sm" style="margin-top: 20px; text-align: center;">
+                                    Live Dashboard (Built with React + Recharts)</p>
+                            </div>
+                            <div class="ui-card" style="padding: 15px;">
+                                <img src="ai_coach_ui.png" style="height: 400px; width: 100%;"
+                                    alt="AI Coach UI Fallback">
+                                <p class="text-center text-muted text-sm" style="margin-top: 20px; text-align: center;">
+                                    Interactive AI Coach Interface</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="slide-frame">
+                    <div class="frame-header">
+                        <div class="header-logo"><i data-lucide="activity" style="color:var(--primary);"></i>
+                            BehaviorAnalyzer</div>
+                        <div class="header-title"><i data-lucide="rocket"></i> Results & Future Scope</div>
+                    </div>
+                    <div class="frame-content">
+                        <div class="bento-grid cols-4" style="margin-bottom: 40px;">
+                            <div class="ui-card" style="text-align: center; padding: 25px;">
+                                <div class="stat-num text-gradient">97.8%</div>
+                                <p class="text-muted text-sm">CNN Accuracy</p>
+                            </div>
+                            <div class="ui-card" style="text-align: center; padding: 25px;">
+                                <div class="stat-num text-gradient">800ms</div>
+                                <p class="text-muted text-sm">Latency</p>
+                            </div>
+                            <div class="ui-card" style="text-align: center; padding: 25px;">
+                                <div class="stat-num text-gradient">7</div>
+                                <p class="text-muted text-sm">Emotions</p>
+                            </div>
+                            <div class="ui-card" style="text-align: center; padding: 25px;">
+                                <div class="stat-num text-gradient">100%</div>
+                                <p class="text-muted text-sm">Anonymous</p>
+                            </div>
+                        </div>
+
+                        <div class="split-layout">
+                            <div>
+                                <h3 style="font-size: 24px !important;">What We Achieved</h3>
+                                <div class="list-item"><i data-lucide="check-circle-2"
+                                        style="color: var(--accent);"></i><span class="text-sm">Proved that
+                                        comparing before-and-after emotions can show how well a class went.</span></div>
+                                <div class="list-item"><i data-lucide="check-circle-2"
+                                        style="color: var(--accent);"></i><span class="text-sm">Built a privacy-safe
+                                        system — no student photos are ever saved.</span></div>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px !important;">What's Next</h3>
+                                <div class="list-item"><i data-lucide="arrow-right"
+                                        style="color: var(--primary);"></i><span class="text-sm"><strong>More
+                                            Senses:</strong> Add voice tone detection and
+                                        body language tracking.</span></div>
+                                <div class="list-item"><i data-lucide="arrow-right"
+                                        style="color: var(--primary);"></i><span class="text-sm"><strong>Cloud
+                                            Ready:</strong> Put it on AWS with live connections (WebSockets) for
+                                        faster updates.</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section data-state="last-slide">
+                <div class="slide-frame"
+                    style="background: radial-gradient(circle at center, rgba(99,102,241,0.15) 0%, var(--bg-frame) 70%); border-color: rgba(99,102,241,0.3);">
+                    <div class="frame-content" style="align-items: center; text-align: center;">
+                        <i data-lucide="heart"
+                            style="width: 64px; height: 64px; color: var(--pink); fill: var(--pink); margin-bottom: 20px;"></i>
+                        <h1 style="font-size: 100px !important;">Thank You</h1>
+                        <p class="text-lg text-muted" style="margin-bottom: 40px;">Helping Teachers Teach Better
+                            with AI.</p>
+
+                        <div class="badge" style="font-size: 18px; padding: 12px 30px;">Q & A Session</div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+        // Initialize Reveal
+        // By setting fixed dimensions and disabling center, we let our CSS .slide-frame do 100% of the layout work.
+        Reveal.initialize({
+            width: 1440,
+            height: 900,
+            margin: 0,
+            minScale: 0.2,
+            maxScale: 2.0,
+            hash: true,
+            controls: false, // Hidden for cleaner UI
+            progress: true,
+            center: false,   // Crucial: Let the slide-frame handle vertical alignment
+            slideNumber: 'c/t',
+            transition: 'fade', // Professional fade transition
+            backgroundTransition: 'fade',
+            mouseWheel: true,
+            disableLayout: false
+        });
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Confetti on last slide
+        Reveal.on('slidechanged', event => {
+            if (event.currentSlide.dataset.state === 'last-slide') {
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#6366f1', '#14b8a6', '#ec4899']
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
