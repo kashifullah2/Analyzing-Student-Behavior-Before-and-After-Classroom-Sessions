@@ -54,8 +54,9 @@ const MediaCapture = ({ sessionId, type }) => {
       const [x, y, w, h] = bbox;
       const posX = isMirrored ? width - x - w : x;
 
+      // Premium drawing style
       ctx.shadowColor = '#22c55e';
-      ctx.shadowBlur = lineWidth * 4;
+      ctx.shadowBlur = lineWidth * 2;
       ctx.strokeStyle = '#22c55e';
       ctx.lineWidth = lineWidth;
       ctx.strokeRect(posX, y, w, h);
@@ -64,10 +65,16 @@ const MediaCapture = ({ sessionId, type }) => {
       const text = `${det.emotion}${det.confidence ? ' ' + (det.confidence * 100).toFixed(0) + '%' : ''}`;
       ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
       const textWidth = ctx.measureText(text).width;
-      ctx.fillStyle = 'rgba(34, 197, 94, 0.85)';
+      
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.9)';
       ctx.beginPath();
-      ctx.roundRect(posX, y - labelH - 2, textWidth + padX * 2, labelH, 4);
+      if (ctx.roundRect) {
+        ctx.roundRect(posX, y - labelH - 2, textWidth + padX * 2, labelH, 4);
+      } else {
+        ctx.rect(posX, y - labelH - 2, textWidth + padX * 2, labelH);
+      }
       ctx.fill();
+      
       ctx.fillStyle = '#ffffff';
       ctx.fillText(text, posX + padX, y - padY - 2);
     });
@@ -99,20 +106,31 @@ const MediaCapture = ({ sessionId, type }) => {
         try {
           const data = JSON.parse(event.data);
           if (data.frame && imgRef.current) {
-            imgRef.current.src = `data:image/jpeg;base64,${data.frame}`;
-          }
-          setFaceCount(data.face_count || 0);
-          if (canvasRef.current && imgRef.current) {
             const img = imgRef.current;
-            if (img.naturalWidth > 0) {
-              canvasRef.current.width = img.naturalWidth;
-              canvasRef.current.height = img.naturalHeight;
-              drawBoxes(
-                canvasRef.current.getContext('2d'),
-                data.results, img.naturalWidth, img.naturalHeight, false,
-              );
+            
+            // Draw boxes after the image has loaded to ensure correct naturalWidth/Height
+            const onFrameLoad = () => {
+              if (canvasRef.current) {
+                canvasRef.current.width = img.naturalWidth;
+                canvasRef.current.height = img.naturalHeight;
+                drawBoxes(
+                  canvasRef.current.getContext('2d'),
+                  data.results, img.naturalWidth, img.naturalHeight, false,
+                );
+              }
+              // Cleanup to prevent memory leaks with many handlers
+              img.onload = null;
+            };
+
+            img.onload = onFrameLoad;
+            img.src = `data:image/jpeg;base64,${data.frame}`;
+            
+            // Immediate fallback if already loaded or data URI processed synchronously
+            if (img.complete && img.naturalWidth > 0) {
+              onFrameLoad();
             }
           }
+          setFaceCount(data.face_count || 0);
         } catch (err) {
           console.error('[WS] Parse error:', err);
         }
@@ -150,9 +168,18 @@ const MediaCapture = ({ sessionId, type }) => {
     ) {
       const img = uploadImgRef.current;
       const canvas = uploadCanvasRef.current;
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      drawBoxes(canvas.getContext('2d'), uploadResults, img.naturalWidth, img.naturalHeight, false);
+
+      const runDrawing = () => {
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        drawBoxes(canvas.getContext('2d'), uploadResults, img.naturalWidth, img.naturalHeight, false);
+      };
+
+      if (img.complete && img.naturalWidth > 0) {
+        runDrawing();
+      } else {
+        img.onload = runDrawing;
+      }
     }
   }, [mode, previewUrl, uploadResults]);
 

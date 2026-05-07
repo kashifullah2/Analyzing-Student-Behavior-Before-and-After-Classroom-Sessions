@@ -105,7 +105,7 @@ async def analyze_frame(session_id: str, type: str = Form(...), file: UploadFile
             session_id=session_id,
             type=type,
             emotion=r['emotion'],
-            bbox=r['bbox'],
+            bbox=json.dumps(r['bbox']),
             timestamp=timestamp
         )
         db.add(new_data)
@@ -130,7 +130,7 @@ async def analyze_video(session_id: str, type: str = Form(...), file: UploadFile
                 session_id=session_id,
                 type=type,
                 emotion=r['emotion'],
-                bbox=r['bbox'],
+                bbox=json.dumps(r['bbox']),
                 timestamp=frame_ts
             )
             db.add(new_data)
@@ -165,7 +165,7 @@ async def analyze_video_full(session_id: str, type: str = Form(...), file: Uploa
                 session_id=session_id,
                 type=type,
                 emotion=res['emotion'],
-                bbox=res['bbox'],
+                bbox=json.dumps(res['bbox']),
                 timestamp=frame_ts
             )
             db.add(new_data)
@@ -245,12 +245,12 @@ async def websocket_webcam(websocket: WebSocket, session_id: str, capture_type: 
                         session_id=session_id,
                         type=capture_type,
                         emotion=r['emotion'],
-                        bbox=r['bbox'],
+                        bbox=json.dumps(r['bbox']),
                         timestamp=timestamp
                     ))
                 db_pending += 1
                 if db_pending >= 10:
-                    db.commit()
+                    await asyncio.get_event_loop().run_in_executor(None, db.commit)
                     db_pending = 0
 
             # Send frame + results to React client
@@ -261,7 +261,7 @@ async def websocket_webcam(websocket: WebSocket, session_id: str, capture_type: 
                 "timestamp": datetime.now().isoformat()
             })
 
-            await asyncio.sleep(0.066)
+            await asyncio.sleep(0.01)
 
     except WebSocketDisconnect:
         print(f"[WS] Client disconnected unexpectedly — session={session_id}, type={capture_type}")

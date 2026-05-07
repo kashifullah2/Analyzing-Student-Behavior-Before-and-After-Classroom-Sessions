@@ -91,7 +91,7 @@ def _process_frame(frame):
             results.append({
                 "emotion":    emotion_label,
                 "confidence": confidence,
-                "bbox":       str([x1, y1, x2 - x1, y2 - y1])  # [x, y, w, h]
+                "bbox":       [int(x1), int(y1), int(x2 - x1), int(y2 - y1)]  # [x, y, w, h]
             })
             
     return results
@@ -122,7 +122,7 @@ class WebcamManager:
         self._stop_event = threading.Event()
         # ─── Frame-skip optimisation: only run inference every N frames ───
         self._frame_counter = 0
-        self._skip_interval = 3  # detect every 3rd frame
+        self._skip_interval = 2  # detect every 2nd frame
         self._cached_results = []
 
     def _read_loop(self):
