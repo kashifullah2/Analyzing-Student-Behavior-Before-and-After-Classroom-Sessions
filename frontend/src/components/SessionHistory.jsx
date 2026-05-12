@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Calendar, Users, Zap, Search, FileText, ArrowUpRight } from 'lucide-react';
+import { Calendar, Users, Zap, Search, FileText, ArrowUpRight, LogIn, LogOut } from 'lucide-react';
 
 const SessionHistory = ({ onRestore }) => {
   const [history, setHistory] = useState([]);
@@ -53,12 +53,14 @@ const SessionHistory = ({ onRestore }) => {
 
       {/* History Table */}
       <div className="dashboard-card overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[600px]">
+        <table className="w-full text-left border-collapse min-w-[750px]">
           <thead className="bg-slate-50/50 border-b border-slate-100">
             <tr>
               <th className="p-5 text-xs font-bold text-slate-500 uppercase tracking-wider">Class Details</th>
               <th className="p-5 text-xs font-bold text-slate-500 uppercase tracking-wider">Date & Time</th>
-              <th className="p-5 text-xs font-bold text-slate-500 uppercase tracking-wider">Attendance</th>
+              <th className="p-5 text-xs font-bold text-slate-500 uppercase tracking-wider">Entry</th>
+              <th className="p-5 text-xs font-bold text-slate-500 uppercase tracking-wider">Exit</th>
+              <th className="p-5 text-xs font-bold text-slate-500 uppercase tracking-wider">Confirmed</th>
               <th className="p-5 text-xs font-bold text-slate-500 uppercase tracking-wider">Vibe Score</th>
               <th className="p-5 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
             </tr>
@@ -66,7 +68,7 @@ const SessionHistory = ({ onRestore }) => {
           <tbody className="divide-y divide-slate-100">
             {filteredHistory.length === 0 ? (
               <tr>
-                <td colSpan="5" className="p-10 text-center text-slate-400 text-sm italic">No session records found matching your criteria.</td>
+                <td colSpan="7" className="p-10 text-center text-slate-400 text-sm italic">No session records found matching your criteria.</td>
               </tr>
             ) : (
               filteredHistory.map((session) => (
@@ -82,8 +84,20 @@ const SessionHistory = ({ onRestore }) => {
                     </div>
                   </td>
                   <td className="p-5">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-blue-600">
+                      <LogIn size={16} className="text-blue-500" />
+                      {session.entry_count ?? 0}
+                    </div>
+                  </td>
+                  <td className="p-5">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600">
+                      <LogOut size={16} className="text-emerald-500" />
+                      {session.exit_count ?? 0}
+                    </div>
+                  </td>
+                  <td className="p-5">
                     <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
-                      <Users size={16} className="text-blue-500" />
+                      <Users size={16} className="text-orange-500" />
                       {session.attendance} <span className="text-slate-400 font-normal">Students</span>
                     </div>
                   </td>

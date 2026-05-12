@@ -78,17 +78,25 @@ async def get_session_history(db: Session = Depends(database.get_db)):
     sessions = db.query(models.Session).all()
     history = []
     for s in sessions:
-        # Get stats for this session to show in history
-        entry_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == s.id, models.EmotionData.type == 'entry').all()
-        stats = services.calculate_advanced_stats(entry_data)
+        # Get stats for both entry and exit
+        entry_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == s.id, models.EmotionData.type.in_(['entry', 'video'])).all()
+        exit_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == s.id, models.EmotionData.type == 'exit').all()
+        entry_stats = services.calculate_advanced_stats(entry_data)
+        exit_stats = services.calculate_advanced_stats(exit_data)
+        
+        entry_count = entry_stats["attendance_est"]
+        exit_count = exit_stats["attendance_est"]
+        confirmed = min(entry_count, exit_count) if entry_count > 0 and exit_count > 0 else max(entry_count, exit_count)
         
         history.append({
             "id": s.id, 
             "class_name": s.class_name, 
             "instructor": s.instructor,
             "created_at": s.created_at, 
-            "vibe_score": stats["vibe_score"], 
-            "attendance": stats["attendance_est"]
+            "vibe_score": entry_stats["vibe_score"], 
+            "attendance": confirmed,
+            "entry_count": entry_count,
+            "exit_count": exit_count,
         })
     return sorted(history, key=lambda x: x['created_at'], reverse=True)
 
@@ -290,9 +298,19 @@ async def get_report(session_id: str, db: Session = Depends(database.get_db)):
     entry_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == session_id, models.EmotionData.type.in_(['entry', 'video'])).all()
     exit_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == session_id, models.EmotionData.type == 'exit').all()
     
+    entry_stats = services.calculate_advanced_stats(entry_data)
+    exit_stats = services.calculate_advanced_stats(exit_data)
+    
+    # Confirmed attendance = min of entry and exit face counts
+    # This represents students who were detected in BOTH entry and exit
+    entry_count = entry_stats["attendance_est"]
+    exit_count = exit_stats["attendance_est"]
+    confirmed_attendance = min(entry_count, exit_count) if entry_count > 0 and exit_count > 0 else max(entry_count, exit_count)
+    
     return {
-        "entry_stats": services.calculate_advanced_stats(entry_data),
-        "exit_stats": services.calculate_advanced_stats(exit_data)
+        "entry_stats": entry_stats,
+        "exit_stats": exit_stats,
+        "confirmed_attendance": confirmed_attendance
     }
 
 @app.get("/sessions/{session_id}/export_pdf")
@@ -306,8 +324,13 @@ async def export_pdf(session_id: str, db: Session = Depends(database.get_db)):
     entry_stats = services.calculate_advanced_stats(entry_data)
     exit_stats = services.calculate_advanced_stats(exit_data)
     
+    # Confirmed attendance = min of entry and exit counts
+    entry_count = entry_stats["attendance_est"]
+    exit_count = exit_stats["attendance_est"]
+    confirmed_attendance = min(entry_count, exit_count) if entry_count > 0 and exit_count > 0 else max(entry_count, exit_count)
+    
     session_info = {"class_name": session.class_name, "instructor": session.instructor}
-    path = services.generate_pdf(session_info, entry_stats, exit_stats)
+    path = services.generate_pdf(session_info, entry_stats, exit_stats, confirmed_attendance)
     
     return FileResponse(path, media_type='application/pdf', filename="report.pdf")
 

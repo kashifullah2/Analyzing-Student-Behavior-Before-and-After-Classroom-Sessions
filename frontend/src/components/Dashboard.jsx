@@ -22,6 +22,7 @@ const Dashboard = ({ sessionId, onSessionInvalid }) => {
         }
       }
     };
+    fetchData();
     const interval = setInterval(fetchData, 2000);
     return () => clearInterval(interval);
   }, [sessionId]);
@@ -34,6 +35,7 @@ const Dashboard = ({ sessionId, onSessionInvalid }) => {
   if (!data) return <div className="p-10 text-center text-muted">Loading Data Stream...</div>;
 
   const { entry_stats, exit_stats } = data;
+  const confirmed = data.confirmed_attendance ?? 0;
   const emotionKeys = ['Happiness', 'Sadness', 'Neutral', 'Anger', 'Surprise'];
 
   const comparisonData = emotionKeys.map(key => ({
@@ -68,9 +70,10 @@ const Dashboard = ({ sessionId, onSessionInvalid }) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <MetricCard title="Total Entry" value={entry_stats.attendance_est} icon={LogIn} colorClass="text-blue-600" bgClass="bg-blue-50" />
         <MetricCard title="Total Exit" value={exit_stats.attendance_est} icon={LogOut} colorClass="text-emerald-600" bgClass="bg-emerald-50" />
+        <MetricCard title="Confirmed Attendance" value={confirmed} icon={Activity} colorClass="text-orange-600" bgClass="bg-orange-50" />
         <MetricCard title="Happy Count" value={(entry_stats.counts['Happiness'] || 0) + (exit_stats.counts['Happiness'] || 0)} icon={Smile} colorClass="text-yellow-600" bgClass="bg-yellow-50" />
         <MetricCard title="Neutral Count" value={(entry_stats.counts['Neutral'] || 0) + (exit_stats.counts['Neutral'] || 0)} icon={MinusCircle} colorClass="text-purple-600" bgClass="bg-purple-50" />
       </div>

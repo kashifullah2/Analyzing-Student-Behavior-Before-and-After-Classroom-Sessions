@@ -429,7 +429,7 @@ def get_system_health() -> dict:
 
 
 # ─── PDF Report ───────────────────────────────────────────────────────────────────
-def generate_pdf(session_info: dict, before_stats: dict, after_stats: dict) -> str:
+def generate_pdf(session_info: dict, before_stats: dict, after_stats: dict, confirmed_attendance: int = 0) -> str:
     filename = f"report_{uuid.uuid4()}.pdf"
     c = canvas.Canvas(filename, pagesize=letter)
 
@@ -439,6 +439,9 @@ def generate_pdf(session_info: dict, before_stats: dict, after_stats: dict) -> s
     c.drawString(50, 725, f"Generated : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     c.drawString(50, 710, f"Class     : {session_info.get('class_name', 'N/A')}")
     c.drawString(50, 695, f"Instructor: {session_info.get('instructor', 'N/A')}")
+
+    c.setFont("Helvetica-Bold", 13)
+    c.drawString(50, 670, f"Confirmed Attendance (min of entry/exit): {confirmed_attendance} students")
 
     def draw_stats(title, stats, start_y):
         y = start_y
@@ -460,7 +463,7 @@ def generate_pdf(session_info: dict, before_stats: dict, after_stats: dict) -> s
             y -= 14
         return y
 
-    y = draw_stats("── Before Class ──", before_stats, 665)
+    y = draw_stats("── Before Class ──", before_stats, 645)
     y -= 20
     draw_stats("── After Class ──", after_stats, y)
 
