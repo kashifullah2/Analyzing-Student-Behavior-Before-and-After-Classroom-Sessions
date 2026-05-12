@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar';
 import LiveSession from './components/LiveSession';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
+import ImpactAnalysis from './components/ImpactAnalysis';
 import AICoach from './components/AICoach';
 import SessionHistory from './components/SessionHistory';
 import Footer from './components/Footer';
@@ -98,6 +99,7 @@ const MainLayout = ({ token, setToken }) => {
                 {view === 'session' && 'Live Monitor'}
                 {view === 'analytics' && 'Deep Analytics'}
                 {view === 'assistant' && 'AI Assistant'}
+                {view === 'impact' && 'Teaching Impact Analysis'}
                 {view === 'history' && 'Session Archives'}
               </h2>
               <p className="text-slate-500 text-sm">Empowering educators with real-time insights</p>
@@ -128,6 +130,7 @@ const MainLayout = ({ token, setToken }) => {
               {view === 'session' && <LiveSession sessionId={activeSession.id} />}
               {view === 'analytics' && <Analytics sessionId={activeSession.id} />}
               {view === 'assistant' && <AICoach sessionId={activeSession.id} />}
+              {view === 'impact' && <ImpactAnalysis sessionId={activeSession.id} />}
               {view === 'history' && <SessionHistory onRestore={handleRestoreSession} />}
               {view === 'settings' && <PlaceholderPage title="Settings" />}
             </div>

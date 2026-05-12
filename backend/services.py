@@ -428,6 +428,79 @@ def get_system_health() -> dict:
     }
 
 
+# ─── Teaching Impact Analysis ─────────────────────────────────────────────────────
+def calculate_teaching_impact(entry_data, exit_data) -> dict:
+    """Compute emotion shift analysis and a composite Teaching Impact Score."""
+    POSITIVE = ['Happiness', 'Surprise']
+    NEGATIVE = ['Anger', 'Sadness', 'Fear', 'Disgust', 'Contempt']
+
+    def _get(item, key):
+        return getattr(item, key, None) or (item.get(key) if isinstance(item, dict) else None)
+
+    def get_pct(data_points):
+        if not data_points:
+            return {e: 0.0 for e in EMOTIONS}
+        emos = [_get(d, 'emotion') for d in data_points if _get(d, 'emotion')]
+        if not emos:
+            return {e: 0.0 for e in EMOTIONS}
+        c = Counter(emos)
+        t = len(emos)
+        return {e: round((c.get(e, 0) / t) * 100, 1) for e in EMOTIONS}
+
+    entry_pct = get_pct(entry_data)
+    exit_pct = get_pct(exit_data)
+    deltas = {e: round(exit_pct[e] - entry_pct[e], 1) for e in EMOTIONS}
+
+    # Teaching Impact Score (0-100)
+    pos_shift = sum(exit_pct[e] for e in POSITIVE) - sum(entry_pct[e] for e in POSITIVE)
+    neg_shift = sum(entry_pct[e] for e in NEGATIVE) - sum(exit_pct[e] for e in NEGATIVE)
+    raw = (pos_shift + neg_shift) / 2
+    impact_score = max(0, min(100, round(50 + raw, 1)))
+
+    # Auto-generated insights
+    insights = []
+    if deltas['Happiness'] > 5:
+        insights.append(f"Happiness rose by {deltas['Happiness']}% — the session positively lifted student mood.")
+    elif deltas['Happiness'] < -5:
+        insights.append(f"Happiness dropped by {abs(deltas['Happiness'])}% — the session may have been challenging.")
+
+    if deltas['Sadness'] < -3:
+        insights.append(f"Sadness fell by {abs(deltas['Sadness'])}% — the session helped alleviate negative feelings.")
+    elif deltas['Sadness'] > 3:
+        insights.append(f"Sadness increased by {deltas['Sadness']}% — some students may need additional support.")
+
+    if deltas['Neutral'] > 10:
+        insights.append(f"Neutral expression rose by {deltas['Neutral']}% — engagement could be improved.")
+    elif deltas['Neutral'] < -10:
+        insights.append(f"Neutral expression dropped by {abs(deltas['Neutral'])}% — students became more emotionally engaged.")
+
+    if deltas['Fear'] < -3:
+        insights.append(f"Anxiety (fear) decreased by {abs(deltas['Fear'])}% — the classroom feels safer.")
+    if deltas['Anger'] < -3:
+        insights.append(f"Frustration (anger) fell by {abs(deltas['Anger'])}% — teaching approach is effective.")
+
+    if impact_score >= 70:
+        insights.append("🏆 Excellent teaching impact! The session significantly improved student emotional state.")
+    elif impact_score >= 50:
+        insights.append("✅ Good teaching impact. The session maintained a stable emotional environment.")
+    elif impact_score < 40:
+        insights.append("⚠️ Limited positive impact detected. Consider adjusting teaching methods or activities.")
+
+    if not insights:
+        insights.append("Capture both entry and exit data to generate meaningful insights.")
+
+    return {
+        "entry_percentages": entry_pct,
+        "exit_percentages": exit_pct,
+        "deltas": deltas,
+        "impact_score": impact_score,
+        "positive_shift": round(pos_shift, 1),
+        "negative_shift": round(neg_shift, 1),
+        "insights": insights,
+        "has_data": bool(entry_data and exit_data)
+    }
+
+
 # ─── PDF Report ───────────────────────────────────────────────────────────────────
 def generate_pdf(session_info: dict, before_stats: dict, after_stats: dict, confirmed_attendance: int = 0) -> str:
     filename = f"report_{uuid.uuid4()}.pdf"

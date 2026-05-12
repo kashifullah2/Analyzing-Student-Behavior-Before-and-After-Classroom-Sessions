@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Radio, BarChart3, Bot, Clock, Settings, LogOut, GraduationCap, PlusCircle, X, Video } from 'lucide-react';
+import { LayoutGrid, Radio, BarChart3, Bot, Clock, Settings, LogOut, GraduationCap, PlusCircle, X, Video, Flame } from 'lucide-react';
 
 const Sidebar = ({ view, setView, handleLogout, handleNewSession, isOpen, onClose }) => {
 
@@ -7,6 +7,7 @@ const Sidebar = ({ view, setView, handleLogout, handleNewSession, isOpen, onClos
     { id: 'dashboard', label: 'Overview', icon: LayoutGrid },
     { id: 'session', label: 'Live Monitor Analyzer', icon: Radio },
     { id: 'analytics', label: 'Deep Analytics', icon: BarChart3 },
+    { id: 'impact', label: 'Teaching Impact', icon: Flame },
     { id: 'assistant', label: 'AI Assistant', icon: Bot },
     { id: 'history', label: 'Session History', icon: Clock },
   ];

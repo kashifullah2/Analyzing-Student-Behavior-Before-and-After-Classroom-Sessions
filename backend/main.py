@@ -313,6 +313,32 @@ async def get_report(session_id: str, db: Session = Depends(database.get_db)):
         "confirmed_attendance": confirmed_attendance
     }
 
+@app.get("/sessions/{session_id}/impact")
+async def get_impact_analysis(session_id: str, db: Session = Depends(database.get_db)):
+    session = db.query(models.Session).filter(models.Session.id == session_id).first()
+    if not session: raise HTTPException(404, "Not Found")
+    
+    entry_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == session_id, models.EmotionData.type.in_(['entry', 'video'])).all()
+    exit_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == session_id, models.EmotionData.type == 'exit').all()
+    
+    return services.calculate_teaching_impact(entry_data, exit_data)
+
+@app.get("/sessions/impact_trends")
+async def get_impact_trends(db: Session = Depends(database.get_db)):
+    sessions = db.query(models.Session).all()
+    trends = []
+    for s in sessions:
+        entry_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == s.id, models.EmotionData.type.in_(['entry', 'video'])).all()
+        exit_data = db.query(models.EmotionData).filter(models.EmotionData.session_id == s.id, models.EmotionData.type == 'exit').all()
+        result = services.calculate_teaching_impact(entry_data, exit_data)
+        trends.append({
+            "session_id": s.id,
+            "class_name": s.class_name,
+            "created_at": s.created_at,
+            "impact_score": result["impact_score"]
+        })
+    return sorted(trends, key=lambda x: x['created_at'])
+
 @app.get("/sessions/{session_id}/export_pdf")
 async def export_pdf(session_id: str, db: Session = Depends(database.get_db)):
     session = db.query(models.Session).filter(models.Session.id == session_id).first()
